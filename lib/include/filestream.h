@@ -33,7 +33,7 @@ class fs_constant {
 template<class Tp, class Info>
 class filestream {
   static_assert(std::is_default_constructible_v<Info>,
-    "Info should be default_constructible.");
+    "Info is required to be default_constructible in Insomnia::filestream.");
 
   static constexpr int k_stat_bytes_count = fs_constant::k_stat_bytes_count;
   static constexpr int k_stat_count = fs_constant::k_stat_count;
