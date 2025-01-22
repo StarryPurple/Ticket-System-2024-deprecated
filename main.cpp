@@ -11,7 +11,7 @@
 #include <map>
 #include <filesystem>
 
-void test() {
+void test_filestream() {
   std::filesystem::path working_dir = std::filesystem::current_path().parent_path();
   std::filesystem::path data_dir = working_dir / "data";
   std::filesystem::path data_file = data_dir / "filestream_test.txt";
@@ -49,7 +49,7 @@ void test() {
 }
 
 int main() {
-  test();
+  // test_filestream();
 
   return 0;
 }
