@@ -1,7 +1,7 @@
 #ifndef CONST_STRING_H
 #define CONST_STRING_H
 
-#include "containers_exceptions.h"
+#include "lib_exceptions.h"
 
 #include <iostream>
 #include <cstring>
