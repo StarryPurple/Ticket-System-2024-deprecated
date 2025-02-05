@@ -56,8 +56,11 @@ void test_database() {
 
   using index_t = Insomnia::ascii_string<64>;
   Insomnia::database<index_t, int> db;
-  // db.renew(data_file.string());
   db.open(data_file.string());
+  if(!db.is_open()) {
+    db.renew(data_file.string());
+    db.open(data_file.string());
+  }
   assert(db.is_open());
   int n; std::cin >> n;
   std::string opt; index_t index; int value;
