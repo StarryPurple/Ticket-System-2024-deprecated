@@ -18,7 +18,7 @@ void test_filestream() {
 
   using name_t = Insomnia::utf8_string<4>;
   Insomnia::filestream<name_t, int> fs;
-  fs.renew(data_file.string());
+  // fs.renew(data_file.string());
   fs.open(data_file.string());
   if(!fs.is_open()) {
     std::cout << "Failed to open file." << std::endl;
