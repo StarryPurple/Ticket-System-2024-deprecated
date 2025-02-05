@@ -1,9 +1,14 @@
 #include "conststring.h"
+#include "pair.h"
+#include "map.h"
+#include "set.h"
 #include "vector.h"
+#include "rb_tree.h"
 #include "database.h"
 
 #include <iostream>
 #include <cstring>
+#include <map>
 #include <filesystem>
 
 void test_filestream() {
