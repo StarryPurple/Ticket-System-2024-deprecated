@@ -114,8 +114,8 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::dealloc(const fspointer &ptr) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.filename() != _filename)
-    throw FileSystemException("Invalid fspointer: wrong file.");
+  // if(ptr.filename() != _filename)
+  //   throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Freeing nullptr");
   unsigned int pos = ptr.pos();
@@ -130,8 +130,8 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::read(const fspointer &ptr, Tp &value) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.filename() != _filename)
-    throw FileSystemException("Invalid fspointer: wrong file.");
+  // if(ptr.filename() != _filename)
+  //   throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Reading nullptr");
   unsigned int pos = ptr.pos();
@@ -146,8 +146,8 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::write(const fspointer &ptr, const Tp &value) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.filename() != _filename)
-    throw FileSystemException("Invalid fspointer: wrong file.");
+  // if(ptr.filename() != _filename)
+  //   throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Writing nullptr");
   unsigned int pos = ptr.pos();

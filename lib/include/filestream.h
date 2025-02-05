@@ -93,7 +93,7 @@ class fspointer {
   static constexpr int k_stat_count = fs_constant::k_stat_count;
 
 private:
-  std::string _file;
+  // std::string _file;
   unsigned int _pos;
 
   fspointer(const std::string &filename, unsigned int pos);
@@ -115,7 +115,7 @@ public:
   friend bool operator==(const nullptr_t &, const fspointer &);
   friend bool operator!=(const nullptr_t &, const fspointer &);
 
-  std::string filename() const;
+  // std::string filename() const;
   unsigned int pos() const;
 };
 

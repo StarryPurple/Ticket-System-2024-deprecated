@@ -8,10 +8,11 @@ fspointer::fspointer()
   : _pos(k_stat_count) {}
 
 fspointer::fspointer(const std::string &filename, unsigned int pos)
-  : _file(filename), _pos(pos) {}
+  : _pos(pos) {}
+//  : _file(filename), _pos(pos) {}
 
 
-std::string fspointer::filename() const {return _file;}
+// std::string fspointer::filename() const {return _file;}
 
 unsigned int fspointer::pos() const {return _pos;}
 
@@ -19,9 +20,9 @@ bool fspointer::operator==(const nullptr_t &) const {return _pos == k_stat_count
 
 bool fspointer::operator!=(const nullptr_t &) const {return _pos != k_stat_count;}
 
-bool fspointer::operator==(const fspointer &other) const {return _file == other._file && _pos == other._pos;}
+bool fspointer::operator==(const fspointer &other) const {return  _pos == other._pos;} // file
 
-bool fspointer::operator!=(const fspointer &other) const {return _file != other._file || _pos != other._pos;}
+bool fspointer::operator!=(const fspointer &other) const {return  _pos != other._pos;} // file
 
 fspointer &fspointer::operator=(const nullptr_t &) {
   _pos = k_stat_count;
