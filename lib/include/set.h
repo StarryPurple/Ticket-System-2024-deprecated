@@ -3,12 +3,12 @@
 
 #include "rb_tree.h"
 
+#include <set>
+
 namespace Insomnia {
 
 template<class Tp, class Compare = std::less<Tp>>
-class set {
-
-};
+using set = std::set<Tp, Compare>;
 
 } // namespace Insomnia
 

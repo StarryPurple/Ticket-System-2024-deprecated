@@ -11,16 +11,16 @@ template<class Tp, class Info>
 filestream<Tp, Info>::~filestream() {close();}
 
 template<class Tp, class Info>
-void filestream<Tp, Info>::open(const std::filesystem::path &file) {
+void filestream<Tp, Info>::open(const std::string &filename) {
   if(_fstream.is_open())
     throw FileSystemException("Current file not closed yet");
-  _fstream.open(file, std::ios::in | std::ios::out | std::ios::binary);
+  _fstream.open(filename, std::ios::in | std::ios::out | std::ios::binary);
   if(!_fstream.is_open()) return;
   _fstream.seekg(std::ios::beg);
   _fstream.read(reinterpret_cast<char *>(&_stat), sizeof(_stat));
   _fstream.read(reinterpret_cast<char *>(&_last_visited), sizeof(_last_visited));
   _fstream.read(reinterpret_cast<char *>(&_size), sizeof(_size));
-  _file = file;
+  _filename = filename;
 }
 
 template<class Tp, class Info>
@@ -31,19 +31,20 @@ void filestream<Tp, Info>::close() {
   _fstream.write(reinterpret_cast<const char *>(&_last_visited), sizeof(_last_visited));
   _fstream.write(reinterpret_cast<const char *>(&_size), sizeof(_size));
   _fstream.close();
-  _file.clear();
+  _filename.clear();
 }
 
 template<class Tp, class Info>
-void filestream<Tp, Info>::renew(const std::filesystem::path &file) {
+void filestream<Tp, Info>::renew(const std::string &filename) {
   if(_fstream.is_open())
     throw FileSystemException("File renew blocked: Current file not closed yet");
    // if(!std::filesystem::is_regular_file(file))
    //  throw FileSystemException("Invalid file path: " + file.string());
-  if(std::filesystem::exists(file)) remove(file);
-  _fstream.open(file, std::ios::out | std::ios::binary);
+  if(std::filesystem::path file(filename);
+    std::filesystem::exists(file)) remove(file);
+  _fstream.open(filename, std::ios::out | std::ios::binary);
   _fstream.close();
-  _fstream.open(file, std::ios::in | std::ios::out | std::ios::binary);
+  _fstream.open(filename, std::ios::in | std::ios::out | std::ios::binary);
   unsigned int ph_uint = 0;
   for(int i = 0; i < k_stat_bytes_count; ++i) // _stat
     _fstream.write(reinterpret_cast<const char *>(&ph_uint), sizeof(ph_uint));
@@ -96,7 +97,8 @@ fspointer filestream<Tp, Info>::alloc() {
   find_unallocated();
   _stat[_last_visited >> 5] |= (1 << (_last_visited & 31));
   ++_size;
-  return fspointer{_file, _last_visited};
+  fspointer res{_filename, _last_visited};
+  return res;
 }
 
 template<class Tp, class Info>
@@ -112,7 +114,7 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::dealloc(const fspointer &ptr) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.file() != _file)
+  if(ptr.filename() != _filename)
     throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Freeing nullptr");
@@ -128,7 +130,7 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::read(const fspointer &ptr, Tp &value) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.file() != _file)
+  if(ptr.filename() != _filename)
     throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Reading nullptr");
@@ -144,7 +146,7 @@ template<class Tp, class Info>
 void filestream<Tp, Info>::write(const fspointer &ptr, const Tp &value) {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
-  if(ptr.file() != _file)
+  if(ptr.filename() != _filename)
     throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
     throw FileSystemException("Writing nullptr");
@@ -159,8 +161,16 @@ void filestream<Tp, Info>::write(const fspointer &ptr, const Tp &value) {
 template<class Tp, class Info>
 bool filestream<Tp, Info>::is_open() const {return _fstream.is_open();}
 
+template <class Tp, class Info>
+size_t filestream<Tp, Info>::occupancy_number() const {
+  if(!_fstream.is_open())
+    throw FileSystemException("No file is open yet");
+  return _size;
+}
+
+
 template<class Tp, class Info>
-double filestream<Tp, Info>::occupancy() const {
+double filestream<Tp, Info>::occupancy_rate() const {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
   return static_cast<double>(_size) / static_cast<double>(k_stat_count);

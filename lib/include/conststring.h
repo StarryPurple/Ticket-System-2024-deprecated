@@ -20,8 +20,8 @@ public:
   ConstString();
   ConstString(const char *str);
   ConstString(const std::string &str);
-  ConstString(const ConstString &other);
-  ConstString(ConstString &&other);
+  ConstString(const ConstString &);
+  ConstString(ConstString &&);
   ~ConstString() = default;
   ConstString &operator=(const char *str);
   ConstString &operator=(const std::string &str);
@@ -30,6 +30,13 @@ public:
   const char *to_str() const;
   // template<int other_length>
   // ConstString<length + other_length, CharT> operator+(const ConstString<CharT, other_length>& other);
+  bool operator==(const ConstString &) const;
+  bool operator!=(const ConstString &) const;
+  bool operator<(const ConstString &) const;
+  bool operator>(const ConstString &) const;
+  bool operator<=(const ConstString &) const;
+  bool operator>=(const ConstString &) const;
+
 };
 
 // Why can't I make them friend functions?

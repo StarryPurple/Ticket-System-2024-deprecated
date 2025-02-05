@@ -43,7 +43,7 @@ class filestream {
 
 private:
   std::fstream _fstream;
-  std::filesystem::path _file;
+  std::string _filename;
   unsigned int _stat[k_stat_bytes_count];
   unsigned int _last_visited;
   unsigned int _size;
@@ -65,11 +65,11 @@ public:
    * remember to check whether the operation succeeded by std::filesystem::exists(file).
    * @warning close() called first.
    */
-  void renew(const std::filesystem::path &file);
+  void renew(const std::string &filename);
   /** fails if file not exist.
    * close the current opening one first.
    */
-  void open(const std::filesystem::path &file);
+  void open(const std::string &filename);
   void close();
   fspointer alloc();
   fspointer alloc(const Tp &);
@@ -80,7 +80,8 @@ public:
   void read(const fspointer &ptr, Tp &value);
 
   bool is_open() const;
-  double occupancy() const;
+  size_t occupancy_number() const;
+  double occupancy_rate() const;
 };
 /** @brief Index which behave like the pointers in heap memory management.
  *  @warning No memory-leak protections are implemented so far.
@@ -92,10 +93,10 @@ class fspointer {
   static constexpr int k_stat_count = fs_constant::k_stat_count;
 
 private:
-  std::filesystem::path _file;
+  std::string _file;
   unsigned int _pos;
 
-  fspointer(const std::filesystem::path &file, unsigned int pos);
+  fspointer(const std::string &filename, unsigned int pos);
 
 public:
   fspointer();
@@ -114,7 +115,7 @@ public:
   friend bool operator==(const nullptr_t &, const fspointer &);
   friend bool operator!=(const nullptr_t &, const fspointer &);
 
-  std::filesystem::path file() const;
+  std::string filename() const;
   unsigned int pos() const;
 };
 

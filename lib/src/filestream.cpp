@@ -7,10 +7,11 @@ namespace Insomnia {
 fspointer::fspointer()
   : _pos(k_stat_count) {}
 
-fspointer::fspointer(const std::filesystem::path &file, unsigned int pos)
-  : _file(file), _pos(pos) {}
+fspointer::fspointer(const std::string &filename, unsigned int pos)
+  : _file(filename), _pos(pos) {}
 
-std::filesystem::path fspointer::file() const {return _file;}
+
+std::string fspointer::filename() const {return _file;}
 
 unsigned int fspointer::pos() const {return _pos;}
 

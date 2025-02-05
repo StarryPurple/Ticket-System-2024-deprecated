@@ -64,6 +64,36 @@ const char *ConstString<length>::to_str() const {
 }
 
 template<int length>
+bool ConstString<length>::operator==(const ConstString &other) const {
+  return std::string(_str) == std::string(other._str);
+}
+
+template<int length>
+bool ConstString<length>::operator!=(const ConstString &other) const {
+  return std::string(_str) != std::string(other._str);
+}
+
+template<int length>
+bool ConstString<length>::operator<(const ConstString &other) const {
+  return std::string(_str) < std::string(other._str);
+}
+
+template<int length>
+bool ConstString<length>::operator>(const ConstString &other) const {
+  return std::string(_str) > std::string(other._str);
+}
+
+template<int length>
+bool ConstString<length>::operator<=(const ConstString &other) const {
+  return std::string(_str) <= std::string(other._str);
+}
+
+template<int length>
+bool ConstString<length>::operator>=(const ConstString &other) const {
+  return std::string(_str) >= std::string(other._str);
+}
+
+template<int length>
 std::istream &operator>>(std::istream &is, ConstString<length> &cstr) {
   std::string str;
   is >> str;

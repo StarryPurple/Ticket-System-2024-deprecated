@@ -1,10 +1,10 @@
 #include "conststring.h"
-#include "pair.hpp"
+#include "pair.h"
 #include "map.h"
 #include "set.h"
 #include "vector.h"
 #include "rb_tree.h"
-#include "multimap_db.h"
+#include "database.h"
 
 #include <iostream>
 #include <cstring>
@@ -15,10 +15,11 @@ void test_filestream() {
   std::filesystem::path working_dir = std::filesystem::current_path().parent_path();
   std::filesystem::path data_dir = working_dir / "data";
   std::filesystem::path data_file = data_dir / "filestream_test.txt";
+
   using name_t = Insomnia::utf8_string<4>;
   Insomnia::filestream<name_t, int> fs;
-  fs.renew(data_file);
-  fs.open(data_file);
+  fs.renew(data_file.string());
+  fs.open(data_file.string());
   if(!fs.is_open()) {
     std::cout << "Failed to open file." << std::endl;
     return;
@@ -45,11 +46,49 @@ void test_filestream() {
   } catch(Insomnia::FileSystemException &ex) {
     std::cout << "File system error: " << ex.what() << std::endl;
   }
-  std::cout << fs.occupancy() << std::endl;
+  std::cout << fs.occupancy_number() << std::endl;
+}
+
+void test_database() {
+  std::filesystem::path working_dir = std::filesystem::current_path().parent_path();
+  std::filesystem::path data_dir = working_dir / "data";
+  std::filesystem::path data_file = data_dir / "database_test.txt";
+
+  using index_t = Insomnia::ascii_string<64>;
+  Insomnia::database<index_t, int> db;
+  // db.renew(data_file.string());
+  db.open(data_file.string());
+  assert(db.is_open());
+  int n; std::cin >> n;
+  std::string opt; index_t index; int value;
+  while(n--) {
+    std::cin >> opt;
+    if(opt == "insert") {
+      std::cin >> index >> value;
+      db.insert(index, value);
+    } else if(opt == "delete") {
+      std::cin >> index >> value;
+      db.erase(index, value);
+    } else if(opt == "find") {
+      std::cin >> index;
+      auto res = db[index];
+      if(res.empty()) std::cout << "null" << std::endl;
+      else {
+        for(const auto &val: res)
+          std::cout << val << ' ';
+        std::cout << std::endl;
+      }
+    }
+  }
+  db.close();
 }
 
 int main() {
-  // test_filestream();
-
+  try {
+    // test_filestream();
+    test_database();
+  } catch(Insomnia::FileSystemException &ex) {
+    std::cout << ex.what() << std::endl;
+  }
   return 0;
 }

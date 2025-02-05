@@ -379,7 +379,7 @@ size_t vector<Tp, Alloc>::size() const {
 template<class Tp, class Alloc>
 void vector<Tp, Alloc>::clear() {
 	for(size_t i = 0; i < _size; ++i)
-		_data[i].~T();
+		_data[i].~Tp();
 	_size = 0;
 }
 
@@ -388,15 +388,15 @@ void vector<Tp, Alloc>::reserve(size_t capacity) {
 	if(_capacity >= capacity) return;
 	Tp *new_data = _allocator.allocate(capacity);
 	if(_is_move_constructable) {
-		for(size_t i = 0; i < _size; ++i) {
+		for(size_t i = 0; i < _size; ++i)
 			new (new_data + i) Tp(std::move(_data[i]));
-			_data[i].~T();
-		}
 	} else {
-		for(size_t i = 0; i < _size; ++i) {
+		for(size_t i = 0; i < _size; ++i)
 			new (new_data + i) Tp(_data[i]);
-			_data[i].~T();
-		}
+	}
+	if constexpr(std::is_class_v<Tp>) {
+		for(size_t i = 0; i < _size; ++i)
+			_data[i].~T(); // remember to check while compiling
 	}
 	_allocator.deallocate(_data, _capacity);
 
