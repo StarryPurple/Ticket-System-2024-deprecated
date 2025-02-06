@@ -337,10 +337,14 @@ template <class Key, class Value, class KeyCompare, class ValueCompare>
 void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &node_self) {
   // remember to maintain highkv.
   if(node_self.ptr == _root) {
-    if(node_self.node.size > 0) return;
-    // clear the tree.
-    _fs.dealloc(_root);
-    _root = nullptr;
+    if(node_self.node.size == 1) {
+      _root = node_self.node.child[0];
+      _fs.dealloc(node_self.ptr);
+    } else {
+      // clear the tree.
+      _fs.dealloc(_root);
+      _root = nullptr;
+    }
     return;
   }
   NodeSelf parent_self;
@@ -396,8 +400,8 @@ bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, cons
   kv_type kv{key, value};
   if(occupancy_number() == 0) {
     Node root;
-    root .kv[0] = kv;
-    root .size = 1; root .is_leaf = true;
+    root.kv[0] = kv;
+    root.size = 1; root.is_leaf = true;
     _root = _fs.alloc(root);
     return true;
   }
