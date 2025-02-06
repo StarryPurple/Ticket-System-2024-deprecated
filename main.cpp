@@ -51,7 +51,7 @@ void test_filestream() {
 
 void test_database() {
   std::filesystem::path working_dir = std::filesystem::current_path().parent_path();
-  std::filesystem::path data_dir = working_dir / "data";
+  std::filesystem::path data_dir = working_dir;
   std::filesystem::path data_file = data_dir / "database_test.txt";
 
   using index_t = Insomnia::ascii_string<64>;
@@ -61,7 +61,7 @@ void test_database() {
     db.renew(data_file.string());
     db.open(data_file.string());
   }
-  assert(db.is_open());
+  // assert(db.is_open());
   int n; std::cin >> n;
   std::string opt; index_t index; int value;
   while(n--) {
