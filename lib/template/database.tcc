@@ -121,7 +121,7 @@ typename database<Key, Value, KeyCompare, ValueCompare>::NodeSelf
     if(cur_node.is_leaf) return NodeSelf{cur_ptr, cur_node};
     int l = 0, r = cur_node.size - 1;
     while(l < r) {
-      int mid = (l + r) << 1;
+      int mid = (l + r) >> 1;
       if(kv_comparer(cur_node.kv[mid], kv)) l = mid + 1;
       else r = mid;
     }
@@ -163,7 +163,7 @@ database<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const Key &key)
     if(cur_node.is_leaf) return NodeSelf{cur_ptr, cur_node};
     int l = 0, r = cur_node.size - 1;
     while(l < r) {
-      int mid = (l + r) << 1;
+      int mid = (l + r) >> 1;
       if(_key_comparer(cur_node.kv[mid].key, key)) l = mid + 1;
       else r = mid;
     }
@@ -190,6 +190,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::average_from_left(
   for(int i = 0; i < diff; ++i) {
     right_self.node.child[i] = left_self.node.child[left_size + i];
     right_self.node.kv[i] = left_self.node.kv[left_size + i];
+    left_self.node.child[left_size + i] = nullptr;
   }
   left_self.node.size = left_size;
   right_self.node.size = right_size;
@@ -212,6 +213,7 @@ NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) 
   for(int i = 0; i < right_size; ++i) {
     right_self.node.child[i] = right_self.node.child[diff + i];
     right_self.node.kv[i] = right_self.node.kv[diff + i];
+    right_self.node.child[diff + i] = nullptr;
   }
   left_self.node.size = left_size;
   right_self.node.size = right_size;
@@ -230,6 +232,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::split(
   for(int i = 0; i < right_size; ++i) {
     right_self.node.child[i] = node_self.node.child[left_size + i];
     right_self.node.kv[i] = node_self.node.kv[left_size + i];
+    node_self.node.child[left_size + i] = nullptr;
   }
   right_self.node.size = right_size;
   node_self.node.size = left_size;
@@ -264,6 +267,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::insertion_maintain(NodeSelf
     if(node_self.node.size <= k_node_size_max) return;
     Node root;
     root.kv[0] = node_self.node.highkv();
+    root.child[0] = _root;
     root.size = 1; root.is_leaf = false;
     _root = _fs.alloc(root);
     NodeSelf parent_self{_root, root};
@@ -388,10 +392,10 @@ template<class Key, class Value, class KeyCompare, class ValueCompare>
 bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, const Value &value) {
   kv_type kv{key, value};
   if(occupancy_number() == 0) {
-    Node root_node;
-    root_node.kv[0] = kv;
-    root_node.size = 1; root_node.is_leaf = true;
-    _root = _fs.alloc(root_node);
+    Node root;
+    root .kv[0] = kv;
+    root .size = 1; root .is_leaf = true;
+    _root = _fs.alloc(root );
     return true;
   }
   NodeSelf node_self = navigate_to_leaf(kv);
