@@ -54,7 +54,7 @@ void test_database() {
 
   using index_t = Insomnia::ascii_string<64>;
   Insomnia::database<index_t, int> db;
-  db.renew(path);
+  // db.renew(path);
   db.open(path);
   if(!db.is_open()) {
     db.renew(path);
