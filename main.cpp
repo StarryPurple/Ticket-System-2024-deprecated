@@ -90,10 +90,10 @@ void test_database() {
 int main() {
   try {
     // test_filestream();
-    // test_database();
+    test_database();
   } catch(Insomnia::FileSystemException &ex) {
     std::cout << ex.what() << std::endl;
   }
-  test_database();
+  // test_database();
   return 0;
 }
