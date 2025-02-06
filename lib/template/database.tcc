@@ -337,10 +337,14 @@ template <class Key, class Value, class KeyCompare, class ValueCompare>
 void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &node_self) {
   // remember to maintain highkv.
   if(node_self.ptr == _root) {
-    if(node_self.node.size > 0) return;
-    // clear the tree.
-    _fs.dealloc(_root);
-    _root = nullptr;
+    if(node_self.node.size == 1) {
+      _root = node_self.node.child[0];
+      _fs.dealloc(node_self.ptr);
+    } else if(node_self.node.size == 0) {
+      // clear the tree.
+      _fs.dealloc(_root);
+      _root = nullptr;
+    }
     return;
   }
   NodeSelf parent_self;
