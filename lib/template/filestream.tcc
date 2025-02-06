@@ -133,7 +133,7 @@ void filestream<Tp, Info>::read(const fspointer &ptr, Tp &value) {
   // if(ptr.filename() != _filename)
   //   throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
-    throw FileSystemException("Reading nullptr");
+    throw FileSystemException("Read corruption: reading nullptr");
   unsigned int pos = ptr.pos();
   if(!(_stat[pos >> 5] & (1 << (pos & 31))))
     throw FileSystemException("Read corruption: reading unallocated position.");
@@ -149,7 +149,7 @@ void filestream<Tp, Info>::write(const fspointer &ptr, const Tp &value) {
   // if(ptr.filename() != _filename)
   //   throw FileSystemException("Invalid fspointer: wrong file.");
   if(ptr == nullptr)
-    throw FileSystemException("Writing nullptr");
+    throw FileSystemException("Write corruption: writing nullptr");
   unsigned int pos = ptr.pos();
   if(!(_stat[pos >> 5] & (1 << (pos & 31))))
     throw FileSystemException("Write corruption: writing unallocated position.");

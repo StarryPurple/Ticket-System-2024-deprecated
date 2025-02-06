@@ -54,7 +54,7 @@ void test_database() {
 
   using index_t = Insomnia::ascii_string<64>;
   Insomnia::database<index_t, int> db;
-  // db.renew(path);
+  db.renew(path);
   db.open(path);
   if(!db.is_open()) {
     db.renew(path);
@@ -90,10 +90,10 @@ void test_database() {
 int main() {
   try {
     // test_filestream();
-    test_database();
+    // test_database();
   } catch(Insomnia::FileSystemException &ex) {
     std::cout << ex.what() << std::endl;
   }
-  // test_database();
+  test_database();
   return 0;
 }

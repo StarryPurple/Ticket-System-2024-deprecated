@@ -205,7 +205,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::average_from_right(
 NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) {
   int left_size = (left_self.node.size + right_self.node.size) / 2;
   int right_size = (left_self.node.size + right_self.node.size) - left_size;
-  int diff = left_size- left_self.node.size; // = right_self.node.size - right_size
+  int diff = left_size - left_self.node.size; // = right_self.node.size - right_size
   for(int i = 0; i < diff; ++i) {
     left_self.node.child[left_size + i] = right_self.node.child[i];
     left_self.node.kv[left_size + i] = right_self.node.kv[i];
@@ -244,9 +244,9 @@ void database<Key, Value, KeyCompare, ValueCompare>::split(
   node_self.node.right = right_self.ptr;
   if(right_self.node.right != nullptr) {
     Node rr_node;
-    _fs.read(right_self.ptr, rr_node);
+    _fs.read(right_self.node.right, rr_node);
     rr_node.left = right_self.ptr;
-    _fs.write(right_self.ptr, rr_node);
+    _fs.write(right_self.node.right, rr_node);
   }
   ++parent_self.node.size;
   for(int i = parent_self.node.size - 1; i > pos + 1; --i) {
@@ -395,7 +395,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, cons
     Node root;
     root .kv[0] = kv;
     root .size = 1; root .is_leaf = true;
-    _root = _fs.alloc(root );
+    _root = _fs.alloc(root);
     return true;
   }
   NodeSelf node_self = navigate_to_leaf(kv);
