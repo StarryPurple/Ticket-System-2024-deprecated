@@ -88,6 +88,8 @@ void test_database() {
 }
 
 int main() {
+  // freopen("../instructions.txt", "r", stdin);
+  // freopen("../answer.txt", "w", stdout);
   try {
     // test_filestream();
     // test_database();
@@ -95,5 +97,6 @@ int main() {
     std::cout << ex.what() << std::endl;
   }
   test_database();
+  // fclose(stdin); fclose(stdout);
   return 0;
 }

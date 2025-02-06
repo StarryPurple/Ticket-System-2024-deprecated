@@ -48,13 +48,16 @@ ConstString<length> &ConstString<length>::operator=(const std::string &str) {
 
 template<int length>
 ConstString<length> &ConstString<length>::operator=(const ConstString &other) {
+  if(this == &other) return *this;
   strcpy(_str, other._str);
   return *this;
 }
 
 template<int length>
 ConstString<length> &ConstString<length>::operator=(ConstString &&other) {
-  _str = other._str;
+  if(this == &other) return *this;
+  strcpy(_str, other._str);
+  other._str[0] = '\0';
   return *this;
 }
 

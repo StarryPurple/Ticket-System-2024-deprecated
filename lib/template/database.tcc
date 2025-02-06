@@ -191,6 +191,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::average_from_left(
     right_self.node.child[i] = left_self.node.child[left_size + i];
     right_self.node.kv[i] = left_self.node.kv[left_size + i];
     left_self.node.child[left_size + i] = nullptr;
+    left_self.node.kv[left_size + i] = kv_type{};
   }
   left_self.node.size = left_size;
   right_self.node.size = right_size;
@@ -207,13 +208,14 @@ NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) 
   int right_size = (left_self.node.size + right_self.node.size) - left_size;
   int diff = left_size - left_self.node.size; // = right_self.node.size - right_size
   for(int i = 0; i < diff; ++i) {
-    left_self.node.child[left_size + i] = right_self.node.child[i];
-    left_self.node.kv[left_size + i] = right_self.node.kv[i];
+    left_self.node.child[left_self.node.size + i] = right_self.node.child[i];
+    left_self.node.kv[left_self.node.size + i] = right_self.node.kv[i];
   }
   for(int i = 0; i < right_size; ++i) {
     right_self.node.child[i] = right_self.node.child[diff + i];
     right_self.node.kv[i] = right_self.node.kv[diff + i];
     right_self.node.child[diff + i] = nullptr;
+    right_self.node.kv[diff + i] = kv_type{};
   }
   left_self.node.size = left_size;
   right_self.node.size = right_size;
@@ -233,6 +235,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::split(
     right_self.node.child[i] = node_self.node.child[left_size + i];
     right_self.node.kv[i] = node_self.node.kv[left_size + i];
     node_self.node.child[left_size + i] = nullptr;
+    node_self.node.kv[left_size + i] = kv_type{};
   }
   right_self.node.size = right_size;
   node_self.node.size = left_size;
