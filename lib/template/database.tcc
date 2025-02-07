@@ -338,6 +338,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &
   // remember to maintain highkv.
   if(node_self.ptr == _root) {
     if(node_self.node.size == 1) {
+      if(node_self.node.child[0] == nullptr) return; // no need to change root.
       _root = node_self.node.child[0];
       _fs.dealloc(node_self.ptr);
     } else if(node_self.node.size == 0) {
