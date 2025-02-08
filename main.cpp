@@ -1,10 +1,5 @@
-#include "conststring.h"
-#include "pair.h"
-#include "map.h"
-#include "set.h"
-#include "vector.h"
-#include "rb_tree.h"
-#include "database.h"
+#include "basic_types.h"
+#include "config.h"
 
 #include <iostream>
 #include <cstring>
@@ -73,7 +68,7 @@ void test_database() {
       db.erase(index, value);
     } else if(opt == "find") {
       std::cin >> index;
-      auto res = db[index];
+      auto res = db.list(index);
       if(res.empty()) std::cout << "null" << std::endl;
       else {
         for(auto it = res.begin(); it != res.end();) {

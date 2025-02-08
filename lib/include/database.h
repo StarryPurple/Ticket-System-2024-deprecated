@@ -81,7 +81,7 @@ public:
   bool insert(const Key &key, const Value &value);
   void erase(const Key &key, const Value &value);
   // returns all values with index "key" in the order of ValueCompare.
-  vector<Value> operator[](const Key &key);
+  vector<Value> list(const Key &key);
 
   bool is_open() const;
   size_t occupancy_number() const;

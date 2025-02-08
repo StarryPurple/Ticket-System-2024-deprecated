@@ -456,7 +456,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-vector<Value> database<Key, Value, KeyCompare, ValueCompare>::operator[](const Key &key) {
+vector<Value> database<Key, Value, KeyCompare, ValueCompare>::list(const Key &key) {
   vector<Value> res;
   if(occupancy_number() == 0) return res;
   NodeSelf node_self = navigate_to_leaf(key);

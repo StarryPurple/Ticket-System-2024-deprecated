@@ -1,5 +1,5 @@
-#ifndef CONTAINERS_EXCEPTIONS_H
-#define CONTAINERS_EXCEPTIONS_H
+#ifndef INSOMNIA_CONTAINERS_EXCEPTIONS_H
+#define INSOMNIA_CONTAINERS_EXCEPTIONS_H
 
 #include <iostream>
 
@@ -52,4 +52,4 @@ public:
 } // namespace Insomnia
 
 
-#endif // CONTAINERS_EXCEPTIONS_H
+#endif // INSOMNIA_CONTAINERS_EXCEPTIONS_H
