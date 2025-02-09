@@ -279,8 +279,9 @@ vector<Tp, Alloc>::vector(const std::initializer_list<Tp> &list): vector() {
 	reserve(list.size());
 	_size = list.size();
 	// not exception-safe
-	for(size_t i = 0; i < _size; ++i)
-		new (_data + i) Tp(list[i]);
+	size_t i = 0;
+	for(const auto &value: list)
+		new (_data + (i++)) Tp(value);
 }
 
 
@@ -354,7 +355,7 @@ const Tp& vector<Tp, Alloc>::back() const {
 
 template<class Tp, class Alloc>
 typename vector<Tp, Alloc>::iterator
-  vector<Tp, Alloc>::begin() {
+  vector<Tp, Alloc>::begin() const {
 	return {*this, 0};
 }
 
@@ -366,7 +367,7 @@ typename vector<Tp, Alloc>::const_iterator
 
 template<class Tp, class Alloc>
 typename vector<Tp, Alloc>::iterator
-  vector<Tp, Alloc>::end() {
+  vector<Tp, Alloc>::end() const {
 	return {*this, _size};
 }
 

@@ -18,6 +18,7 @@ foreach (module ${backend_modules})
     list(LENGTH module_sources num_sources)
     if(num_sources GREATER 0)
       # only .cpp
+      # message(STATUS "Backend find cpp file(s): ${module_sources}")
       add_library(backend_${module_name} STATIC ${module_sources})
       target_include_directories(backend_${module_name} PUBLIC ${module})
     else()

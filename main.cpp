@@ -89,9 +89,11 @@ void test_ticket_system_interface() {
   TicketSystem::InterfaceSystem interface_system;
   // interface_system.interface(current_dir.string());
   interface_system.interface(data_dir.string());
+  ism::stoi("1");
 }
 
 int main() {
-  test_ticket_system_interface();
+  test_database();
+  // test_ticket_system_interface();
   return 0;
 }

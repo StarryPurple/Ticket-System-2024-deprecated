@@ -98,12 +98,7 @@ private:
 
   static constexpr int k_opr_cnt = 16;
   std::function<ReturnInfo(const arglist_t &)> func_list[k_opr_cnt];
-  static constexpr std::string func_name_list[k_opr_cnt] = {
-    "add_user", "login", "logout", "query_profile",
-    "modify_profile", "add_train", "delete_train", "release_train",
-    "query_train", "query_ticket", "query_transfer", "buy_ticket",
-    "query_order", "refund_ticket", "clean", "exit"
-  };
+  static const std::string func_name_list[k_opr_cnt];
   // the default arg is "", for no param passed.
   static const arglist_t func_default_arglist[k_opr_cnt];
   static Command read_command(const std::string &command);
@@ -119,28 +114,6 @@ public:
   void shutdown();
   bool is_open() const;
   Signal run_command(const std::string &command) const;
-};
-
-const BackendSystem::arglist_t BackendSystem::func_default_arglist[k_opr_cnt] = {
-  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // add_user
-  {{'u', ""}, {'p', ""}},                                             // login
-  {{'u', ""}},                                                        // logout
-  {{'c', ""}, {'u', ""}},                                             // query_profile
-
-  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // modify_profile
-  {{'i', ""}, {'n', ""}, {'m', ""}, {'s', ""}, {'p', ""}, {'x', ""},
-   {'t', ""}, {'o', ""}, {'d', ""}, {'y', ""}},                       // add_train
-  {{'i', ""}},                                                        // delete_train
-  {{'i', ""}},                                                        // release_train
-  {{'i', ""}, {'d', ""}},                                             // query_train
-  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_ticket
-  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_transfer
-  {{'u', ""}, {'i', ""}, {'d', ""}, {'n', ""}, {'f', ""}, {'t', ""},
-   {'q', "false"}},                                                   // query_ticket
-  {{'u', ""}},                                                        // query_order
-  {{'u', ""}, {'n', "1"}},                                            // refund_ticket
-  {},                                                                 // clean
-  {}                                                                  // exit
 };
 
 } // namespace TicketSystem

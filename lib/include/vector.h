@@ -125,9 +125,9 @@ public:
 	 * throw container_is_empty if size == 0
 	 */
 	const Tp& back() const;
-	iterator begin();
+	iterator begin() const;
 	const_iterator cbegin() const;
-	iterator end();
+	iterator end() const;
 	const_iterator cend() const;
 	bool empty() const;
 	size_t size() const;

@@ -2,6 +2,36 @@
 
 namespace TicketSystem {
 
+// static constant
+
+const std::string BackendSystem::func_name_list[k_opr_cnt] = {
+  "add_user", "login", "logout", "query_profile",
+  "modify_profile", "add_train", "delete_train", "release_train",
+  "query_train", "query_ticket", "query_transfer", "buy_ticket",
+  "query_order", "refund_ticket", "clean", "exit"
+};
+
+const BackendSystem::arglist_t BackendSystem::func_default_arglist[k_opr_cnt] = {
+  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // add_user
+  {{'u', ""}, {'p', ""}},                                             // login
+  {{'u', ""}},                                                        // logout
+  {{'c', ""}, {'u', ""}},                                             // query_profile
+  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // modify_profile
+  {{'i', ""}, {'n', ""}, {'m', ""}, {'s', ""}, {'p', ""}, {'x', ""},
+   {'t', ""}, {'o', ""}, {'d', ""}, {'y', ""}},                       // add_train
+  {{'i', ""}},                                                        // delete_train
+  {{'i', ""}},                                                        // release_train
+  {{'i', ""}, {'d', ""}},                                             // query_train
+  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_ticket
+  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_transfer
+  {{'u', ""}, {'i', ""}, {'d', ""}, {'n', ""}, {'f', ""}, {'t', ""},
+   {'q', "false"}},                                                   // query_ticket
+  {{'u', ""}},                                                        // query_order
+  {{'u', ""}, {'n', "1"}},                                            // refund_ticket
+  {},                                                                 // clean
+  {}                                                                  // exit
+};
+
 // startups / shutdowns
 
 BackendSystem::BackendSystem()
@@ -178,64 +208,66 @@ BackendSystem::Signal BackendSystem::run_command(const std::string &command) con
 // the operations.
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::add_user(const arglist_t &args) {
-
+  // {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}
 
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::login(const arglist_t &args) {
-
+  // {{'u', ""}, {'p', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::logout(const arglist_t &args) {
-
+  // {{'u', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::query_profile(const arglist_t &args) {
-
+  // {{'c', ""}, {'u', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::modify_profile(const arglist_t &args) {
-
+  // {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::add_train(const arglist_t &args) {
-
+  // {'i', ""}, {'n', ""}, {'m', ""}, {'s', ""}, {'p', ""}, {'x', ""},
+  // {'t', ""}, {'o', ""}, {'d', ""}, {'y', ""}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::delete_train(const arglist_t &args) {
-
+  // {{'i', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::release_train(const arglist_t &args) {
-
+  // {{'i', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_train(const arglist_t &args) {
-
+  // {{'i', ""}, {'d', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_ticket(const arglist_t &args) {
-
+  // {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const arglist_t &args) {
-
+  // {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t &args) {
-
+  // {'u', ""}, {'i', ""}, {'d', ""}, {'n', ""}, {'f', ""}, {'t', ""},
+  // {'q', "false"}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::query_order(const arglist_t &args) {
-
+  // {{'u', ""}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglist_t &args) {
-
+  // {{'u', ""}, {'n', "1"}}
 }
 
 BackendSystem::ReturnInfo BackendSystem::DatabaseSet::clean(const arglist_t &args) {
-  // args not used
+  // {}
   user_index_db.renew();
   user_db.renew();
   train_index_db.renew();
@@ -245,6 +277,7 @@ BackendSystem::ReturnInfo BackendSystem::DatabaseSet::clean(const arglist_t &arg
 }
 
 BackendSystem::ReturnInfo BackendSystem::exit(const arglist_t &args) {
+  // {}
   return {"bye", Signal::sig_terminal};
 }
 

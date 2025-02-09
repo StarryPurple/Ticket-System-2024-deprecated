@@ -413,7 +413,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &
 template<class Key, class Value, class KeyCompare, class ValueCompare>
 bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, const Value &value) {
   kv_type kv{key, value};
-  if(occupancy_number() == 0) {
+  if(empty()) {
     Node root;
     root.kv[0] = kv;
     root.size = 1; root.is_leaf = true;
@@ -446,7 +446,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, cons
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
 bool database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const Value &value) {
-  if(occupancy_number() == 0) return false;
+  if(empty()) return false;
   kv_type kv{key, value};
   NodeSelf node_self = navigate_to_leaf(kv);
   if(kv_comparer(node_self.node.highkv(), kv)) return false;
@@ -469,7 +469,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const
 template <class Key, class Value, class KeyCompare, class ValueCompare>
 vector<Value> database<Key, Value, KeyCompare, ValueCompare>::list(const Key &key) {
   vector<Value> res;
-  if(occupancy_number() == 0) return res;
+  if(empty()) return res;
   NodeSelf node_self = navigate_to_leaf(key);
   if(_key_comparer(node_self.node.highkv().key, key)) return res;
   int l = 0, r = node_self.node.size - 1;
