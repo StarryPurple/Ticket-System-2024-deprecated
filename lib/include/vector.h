@@ -97,6 +97,7 @@ public:
 	vector();
 	vector(const vector &other);
 	vector(vector &&other);
+	vector(const std::initializer_list<Tp> &list);
 	~vector();
 	vector& operator=(const vector &other);
 	vector& operator=(vector &&other);

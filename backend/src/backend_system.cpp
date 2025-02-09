@@ -30,16 +30,25 @@ BackendSystem::BackendSystem()
 BackendSystem::ReturnInfo::ReturnInfo(const std::string &_info, const Signal &_signal)
   : info(_info), signal(_signal) {}
 
+BackendSystem::CommandPair::CommandPair(const key_t &_key, const arg_t &_arg)
+  : key(_key), arg(_arg) {}
+
 bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   user_db.open(working_dir + "/user_db.dat");
   user_index_db.open(working_dir + "/user_index_db.dat");
+  user_ticket_status_db.open(working_dir + "/user_ticket_status_db.dat");
+  pending_ticket_status_ds.open(working_dir + "/pending_ticket_status_ds.dat");
   train_db.open(working_dir + "/train_db.dat");
   train_index_db.open(working_dir + "/train_index_db.dat");
   station_db.open(working_dir + "/station_db.dat");
-  if(user_db.is_open() && user_index_db.is_open() && train_db.is_open()
-    && train_index_db.is_open() && station_db.is_open()) return true;
+  if(user_db.is_open() && user_index_db.is_open()
+    && user_ticket_status_db.is_open() && pending_ticket_status_ds.is_open()
+    && train_db.is_open() && train_index_db.is_open()
+    && station_db.is_open()) return true;
   user_db.close();
   user_index_db.close();
+  user_ticket_status_db.close();
+  pending_ticket_status_ds.close();
   train_db.close();
   train_index_db.close();
   station_db.close();
@@ -54,6 +63,8 @@ void BackendSystem::DatabaseSet::close() {
   if(!is_open()) return;
   user_db.close();
   user_index_db.close();
+  user_ticket_status_db.close();
+  pending_ticket_status_ds.close();
   train_db.close();
   train_index_db.close();
   station_db.close();
@@ -120,13 +131,13 @@ BackendSystem::Command BackendSystem::read_command(const std::string &command) {
   cmd.timestamp = ism::stoi(argv[0]);
   cmd.cmd_name = argv[1];
   for(int i = 2; i < arg.length(); i += 2)
-    cmd.arg_list.push_back(CommandPair{argv[i][1], argv[i + 1]});
+    cmd.arglist.push_back(CommandPair{argv[i][1], argv[i + 1]});
   return cmd;
 }
 
-void BackendSystem::fill_args(const arglist_t &args, arglist_t &sorted_args) {
-  for(const auto &arg: args) {
-    for(auto &sorted_arg: sorted_args)
+void BackendSystem::sort_arglist(const arglist_t &arglist, arglist_t &sorted_arglist) {
+  for(const auto &arg: arglist) {
+    for(auto &sorted_arg: sorted_arglist)
       if(arg.key == sorted_arg.key) {
         sorted_arg.arg = arg.arg;
         break;
@@ -138,7 +149,9 @@ BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
   ReturnInfo result;
   for(int i = 0; i < k_opr_cnt; ++i)
     if(command.cmd_name == func_name_list[i]) {
-      result = func_list[i](command.arg_list);
+      arglist_t sorted_arglist = func_default_arglist[i];
+      sort_arglist(command.arglist, sorted_arglist);
+      result = func_list[i](sorted_arglist);
       break;
     }
   std::cout << result.info << std::endl;
@@ -165,6 +178,7 @@ BackendSystem::Signal BackendSystem::run_command(const std::string &command) con
 // the operations.
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::add_user(const arglist_t &args) {
+
 
 }
 

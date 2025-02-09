@@ -23,6 +23,7 @@ private:
     using arg_t = std::string;
     key_t key;
     arg_t arg;
+    CommandPair(const key_t &_key, const arg_t &_arg);
   };
   using arglist_t = ism::vector<CommandPair>;
   struct Command {
@@ -30,7 +31,7 @@ private:
     using cmd_name_t = std::string;
     timestamp_t timestamp;
     cmd_name_t cmd_name;
-    arglist_t arg_list;
+    arglist_t arglist;
   };
 
   struct DatabaseSet {
@@ -41,7 +42,7 @@ private:
     ism::database<user_index_t, User> user_db;
     ism::database<User::username_t, user_index_t> user_index_db;
     ism::database<user_index_t, User::ticket_status_t> user_ticket_status_db;
-    ism::database<nullptr_t, >
+    ism::dataset<User::ticket_status_t> pending_ticket_status_ds;
     using train_index_t = int;
     ism::database<train_index_t, Train> train_db;
     ism::database<Train::train_id_t, train_index_t> train_index_db;
@@ -103,12 +104,13 @@ private:
     "query_train", "query_ticket", "query_transfer", "buy_ticket",
     "query_order", "refund_ticket", "clean", "exit"
   };
-
+  // the default arg is "", for no param passed.
+  static const arglist_t func_default_arglist[k_opr_cnt];
   static Command read_command(const std::string &command);
   // args: {'z', "par1"}, {'y', "par2"}, (no 'x'), ...
   // (initial) sorted_args: {'x', "default0"}, {'y', ""}, {'z', "default_z"}, ...
   // target: sorted_args: {'x', "default0"}, {'y', "par2"}, {'z', "par1"}, ...
-  static void fill_args(const arglist_t &args, arglist_t &sorted_args);
+  static void sort_arglist(const arglist_t &arglist, arglist_t &sorted_arglist);
 
   Signal run_command(const Command &command) const;
 public:
@@ -117,6 +119,28 @@ public:
   void shutdown();
   bool is_open() const;
   Signal run_command(const std::string &command) const;
+};
+
+const BackendSystem::arglist_t BackendSystem::func_default_arglist[k_opr_cnt] = {
+  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // add_user
+  {{'u', ""}, {'p', ""}},                                             // login
+  {{'u', ""}},                                                        // logout
+  {{'c', ""}, {'u', ""}},                                             // query_profile
+
+  {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}, // modify_profile
+  {{'i', ""}, {'n', ""}, {'m', ""}, {'s', ""}, {'p', ""}, {'x', ""},
+   {'t', ""}, {'o', ""}, {'d', ""}, {'y', ""}},                       // add_train
+  {{'i', ""}},                                                        // delete_train
+  {{'i', ""}},                                                        // release_train
+  {{'i', ""}, {'d', ""}},                                             // query_train
+  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_ticket
+  {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}},                   // query_transfer
+  {{'u', ""}, {'i', ""}, {'d', ""}, {'n', ""}, {'f', ""}, {'t', ""},
+   {'q', "false"}},                                                   // query_ticket
+  {{'u', ""}},                                                        // query_order
+  {{'u', ""}, {'n', "1"}},                                            // refund_ticket
+  {},                                                                 // clean
+  {}                                                                  // exit
 };
 
 } // namespace TicketSystem

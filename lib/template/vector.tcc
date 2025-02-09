@@ -274,6 +274,16 @@ vector<Tp, Alloc>::vector(vector &&other) {
 	other._data = nullptr;
 }
 
+template <class Tp, class Alloc>
+vector<Tp, Alloc>::vector(const std::initializer_list<Tp> &list): vector() {
+	reserve(list.size());
+	_size = list.size();
+	// not exception-safe
+	for(size_t i = 0; i < _size; ++i)
+		new (_data + i) Tp(list[i]);
+}
+
+
 template<class Tp, class Alloc>
 vector<Tp, Alloc>::~vector() {
 	clear();
