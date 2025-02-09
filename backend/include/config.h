@@ -2,9 +2,8 @@
 #define TICKET_SYSTEM_CONFIG_H
 
 #include "vector.h"
-// #include "map.h"
+#include "map.h"
 #include "set.h"
-// #include "list.h"
 
 #include "conststring.h"
 
@@ -12,6 +11,7 @@
 
 #include "database.h"
 #include "dataset.h"
+#include "info_recorder.h"
 
 namespace ism = Insomnia;
 

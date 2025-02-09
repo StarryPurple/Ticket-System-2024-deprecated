@@ -8,7 +8,7 @@ void InterfaceSystem::interface(const std::string &data_dir) {
     std::string command;
     getline(std::cin, command);
     if(const auto signal = _backend_mgr.run_command(command);
-      signal == BackendSystem::Signal::sig_terminal) break;
+      signal == BackendSystem::Signal::sig_exit) break;
   }
   _backend_mgr.shutdown();
 }

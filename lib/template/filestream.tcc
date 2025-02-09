@@ -57,7 +57,21 @@ void filestream<Tp, Info>::renew(const std::string &filename) {
 
 template <class Tp, class Info>
 void filestream<Tp, Info>::renew() {
-  renew(_filename);
+  if(!_fstream.is_open())
+    throw FileSystemException("File renew blocked: No file opened yet");
+  // if(!std::filesystem::is_regular_file(file))
+  //  throw FileSystemException("Invalid file path: " + file.string());
+  _fstream.close();
+  _fstream.open(_filename, std::ios::out | std::ios::binary);
+  _fstream.close();
+  _fstream.open(_filename, std::ios::in | std::ios::out | std::ios::binary);
+  unsigned int ph_uint = 0;
+  for(int i = 0; i < k_stat_bytes_count; ++i) // _stat
+    _fstream.write(reinterpret_cast<const char *>(&ph_uint), sizeof(ph_uint));
+  _fstream.write(reinterpret_cast<const char *>(&ph_uint), sizeof(ph_uint)); // _last_visited
+  _fstream.write(reinterpret_cast<const char *>(&ph_uint), sizeof(ph_uint)); // _size
+  Info info;
+  _fstream.write(reinterpret_cast<const char *>(&info), sizeof(info));
 }
 
 template<class Tp, class Info>

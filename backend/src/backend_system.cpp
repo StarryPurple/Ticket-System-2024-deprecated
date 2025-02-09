@@ -63,6 +63,33 @@ BackendSystem::ReturnInfo::ReturnInfo(const std::string &_info, const Signal &_s
 BackendSystem::CommandPair::CommandPair(const key_t &_key, const arg_t &_arg)
   : key(_key), arg(_arg) {}
 
+void BackendSystem::DatabaseSet::renew(const std::string &working_dir) {
+  user_db.renew(working_dir + "/user_db.dat");
+  user_index_db.renew(working_dir + "/user_index_db.dat");
+  user_ticket_status_db.renew(working_dir + "/user_ticket_status_db.dat");
+  pending_ticket_status_ds.renew(working_dir + "/pending_ticket_status_ds.dat");
+  train_db.renew(working_dir + "/train_db.dat");
+  train_index_db.renew(working_dir + "/train_index_db.dat");
+  station_db.renew(working_dir + "/station_db.dat");
+  info_rec.renew(working_dir + "/info_rec.dat");
+  info.user_index_tot = 0;
+  info.train_index_tot = 0;
+}
+
+void BackendSystem::DatabaseSet::renew() {
+  user_index_db.renew();
+  user_db.renew();
+  user_ticket_status_db.renew();
+  pending_ticket_status_ds.renew();
+  train_index_db.renew();
+  train_db.renew();
+  station_db.renew();
+  info_rec.renew();
+  info.user_index_tot = 0;
+  info.train_index_tot = 0;
+}
+
+
 bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   user_db.open(working_dir + "/user_db.dat");
   user_index_db.open(working_dir + "/user_index_db.dat");
@@ -71,10 +98,14 @@ bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   train_db.open(working_dir + "/train_db.dat");
   train_index_db.open(working_dir + "/train_index_db.dat");
   station_db.open(working_dir + "/station_db.dat");
+  info_rec.open(working_dir + "/info_rec.dat");
   if(user_db.is_open() && user_index_db.is_open()
     && user_ticket_status_db.is_open() && pending_ticket_status_ds.is_open()
     && train_db.is_open() && train_index_db.is_open()
-    && station_db.is_open()) return true;
+    && station_db.is_open() && info_rec.is_open()) {
+    info_rec.read_info(info);
+    return true;
+  }
   user_db.close();
   user_index_db.close();
   user_ticket_status_db.close();
@@ -82,6 +113,7 @@ bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   train_db.close();
   train_index_db.close();
   station_db.close();
+  info_rec.close();
   return false;
 }
 
@@ -91,6 +123,7 @@ bool BackendSystem::DatabaseSet::is_open() const {
 
 void BackendSystem::DatabaseSet::close() {
   if(!is_open()) return;
+  info_rec.write_info(info);
   user_db.close();
   user_index_db.close();
   user_ticket_status_db.close();
@@ -98,30 +131,36 @@ void BackendSystem::DatabaseSet::close() {
   train_db.close();
   train_index_db.close();
   station_db.close();
+  info_rec.close();
 }
 
 BackendSystem::DatabaseSet::~DatabaseSet() {
   close();
 }
 
-void BackendSystem::UserManager::startup(DatabaseSet &db_set) {
-  _db_set = &db_set;
+void BackendSystem::UserManager::startup(DatabaseSet &_db_set) {
+  db_set = &_db_set;
+  active_users.clear();
 }
 
-void BackendSystem::TrainManager::startup(DatabaseSet &db_set) {
-  _db_set = &db_set;
+void BackendSystem::TrainManager::startup(DatabaseSet &_db_set) {
+  db_set = &_db_set;
 }
 
 void BackendSystem::UserManager::shutdown() {
-  _db_set = nullptr;
+  db_set = nullptr;
 }
 
 void BackendSystem::TrainManager::shutdown() {
-  _db_set = nullptr;
+  db_set = nullptr;
 }
 
 bool BackendSystem::startup(const std::string &data_dir) {
   bool open_success = _db_set.open(data_dir);
+  if(!open_success) {
+    _db_set.renew(data_dir);
+    _db_set.open(data_dir);
+  }
   if(!open_success) return false;
   _user_mgr.startup(_db_set);
   _train_mgr.startup(_db_set);
@@ -165,14 +204,9 @@ BackendSystem::Command BackendSystem::read_command(const std::string &command) {
   return cmd;
 }
 
-void BackendSystem::sort_arglist(const arglist_t &arglist, arglist_t &sorted_arglist) {
-  for(const auto &arg: arglist) {
-    for(auto &sorted_arg: sorted_arglist)
-      if(arg.key == sorted_arg.key) {
-        sorted_arg.arg = arg.arg;
-        break;
-      }
-  }
+void BackendSystem::sort_arglist(const raw_arglist_t &arglist, arglist_t &sorted_arglist) {
+  for(const auto &arg: arglist)
+    sorted_arglist[arg.key] = arg.arg;
 }
 
 BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
@@ -209,19 +243,54 @@ BackendSystem::Signal BackendSystem::run_command(const std::string &command) con
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::add_user(const arglist_t &args) {
   // {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}
+  User::username_t cur_username = args.at('c');
+  User::username_t username = args.at('u');
+  User::password_t password = args.at('p');
+  User::real_name_t real_name = args.at('n');
+  User::mail_addr_t mail_addr = args.at('m');
+  User::privilege_t privilege = ism::stoi(args.at('g'));
 
+  if(db_set->user_index_db.empty()) {
+    privilege = 10;
+  } else {
+    if(!active_users.contains(cur_username)) return {"-1", Signal::sig_normal};
+    if(!db_set->user_index_db.list(username).empty()) return {"-1", Signal::sig_normal};
+    auto cur_user_index = db_set->user_index_db.list(cur_username)[0];
+    User cur_user = db_set->user_db.list(cur_user_index)[0];
+    if(cur_user.privilege <= privilege) return {"-1", Signal::sig_normal};
+  }
+  User user{username, password, real_name, mail_addr, privilege};
+  auto user_index = ++db_set->info.user_index_tot;
+  db_set->user_index_db.insert(username, user_index);
+  db_set->user_db.insert(user_index, user);
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::login(const arglist_t &args) {
   // {{'u', ""}, {'p', ""}}
+  User::username_t username = args.at('u');
+  User::password_t password = args.at('p');
+  auto user_index_list = db_set->user_index_db.list(username);
+  if(user_index_list.empty()) return {"-1", Signal::sig_normal};
+  auto user = db_set->user_db.list(user_index_list[0])[0];
+  if(password != user.password) return {"-1", Signal::sig_normal};
+  active_users.insert(username);
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::logout(const arglist_t &args) {
   // {{'u', ""}}
+  User::username_t username = args.at('u');
+  auto iter = active_users.find(username);
+  if(iter == active_users.end()) return {"-1", Signal::sig_normal};
+  active_users.erase(iter);
+  // or just use the return value of erase() to check.
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::query_profile(const arglist_t &args) {
   // {{'c', ""}, {'u', ""}}
+
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::modify_profile(const arglist_t &args) {
@@ -268,17 +337,13 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
 
 BackendSystem::ReturnInfo BackendSystem::DatabaseSet::clean(const arglist_t &args) {
   // {}
-  user_index_db.renew();
-  user_db.renew();
-  train_index_db.renew();
-  train_db.renew();
-  station_db.renew();
+  renew();
   return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::exit(const arglist_t &args) {
   // {}
-  return {"bye", Signal::sig_terminal};
+  return {"bye", Signal::sig_exit};
 }
 
 

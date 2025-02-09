@@ -10,7 +10,7 @@ namespace TicketSystem {
 
 class BackendSystem {
 public:
-  enum class Signal {sig_normal, sig_terminal};
+  enum class Signal {sig_normal, sig_exit};
 private:
   struct ReturnInfo {
     std::string info;
@@ -25,13 +25,14 @@ private:
     arg_t arg;
     CommandPair(const key_t &_key, const arg_t &_arg);
   };
-  using arglist_t = ism::vector<CommandPair>;
+  using raw_arglist_t = ism::vector<CommandPair>;
+  using arglist_t = ism::map<CommandPair::key_t, CommandPair::arg_t>;
   struct Command {
     using timestamp_t = int;
     using cmd_name_t = std::string;
     timestamp_t timestamp;
     cmd_name_t cmd_name;
-    arglist_t arglist;
+    raw_arglist_t arglist;
   };
 
   struct DatabaseSet {
@@ -41,15 +42,24 @@ private:
     using user_index_t = int;
     ism::database<user_index_t, User> user_db;
     ism::database<User::username_t, user_index_t> user_index_db;
-    ism::database<user_index_t, User::ticket_status_t> user_ticket_status_db;
-    ism::dataset<User::ticket_status_t> pending_ticket_status_ds;
+    ism::database<user_index_t, ticket_status_t> user_ticket_status_db;
+    ism::dataset<ticket_status_t> pending_ticket_status_ds;
     using train_index_t = int;
     ism::database<train_index_t, Train> train_db;
     ism::database<Train::train_id_t, train_index_t> train_index_db;
     using station_order_t = int; // the order number that this station is on the route of the train
     ism::database<Train::station_name_t, ism::pair<Train, station_order_t>> station_db;
 
+    struct info_t {
+      user_index_t user_index_tot;
+      user_index_t train_index_tot;
+    };
+    info_t info;
+    ism::info_recorder<info_t> info_rec;
+
     ~DatabaseSet();
+    void renew(const std::string &working_dir);
+    void renew();
     bool open(const std::string &working_dir);
     bool is_open() const;
     void close();
@@ -58,7 +68,7 @@ private:
 
   // for operations which needs the active-user list.
   struct UserManager {
-    DatabaseSet *_db_set = nullptr;
+    DatabaseSet *db_set = nullptr;
     ism::set<User::username_t> active_users;
 
     ReturnInfo add_user(const arglist_t &args);
@@ -71,13 +81,13 @@ private:
     ReturnInfo query_order(const arglist_t &args);
     ReturnInfo refund_ticket(const arglist_t &args);
 
-    void startup(DatabaseSet &db_set);
+    void startup(DatabaseSet &_db_set);
     void shutdown();
   };
 
   // no user privilege required... and associated with train profiles.
   struct TrainManager {
-    DatabaseSet *_db_set = nullptr;
+    DatabaseSet *db_set = nullptr;
 
     ReturnInfo add_train(const arglist_t &args);
     ReturnInfo delete_train(const arglist_t &args);
@@ -86,7 +96,7 @@ private:
     ReturnInfo query_ticket(const arglist_t &args);
     ReturnInfo query_transfer(const arglist_t &args);
 
-    void startup(DatabaseSet &db_set);
+    void startup(DatabaseSet &_db_set);
     void shutdown();
   };
 
@@ -105,7 +115,7 @@ private:
   // args: {'z', "par1"}, {'y', "par2"}, (no 'x'), ...
   // (initial) sorted_args: {'x', "default0"}, {'y', ""}, {'z', "default_z"}, ...
   // target: sorted_args: {'x', "default0"}, {'y', "par2"}, {'z', "par1"}, ...
-  static void sort_arglist(const arglist_t &arglist, arglist_t &sorted_arglist);
+  static void sort_arglist(const raw_arglist_t &arglist, arglist_t &sorted_arglist);
 
   Signal run_command(const Command &command) const;
 public:
