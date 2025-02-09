@@ -39,6 +39,10 @@ void database<Key, Value, KeyCompare, ValueCompare>::renew(const std::string &fi
   _fs.renew(filename);
 }
 
+template <class Key, class Value, class KeyCompare, class ValueCompare>
+void database<Key, Value, KeyCompare, ValueCompare>::renew() {
+  _fs.renew();
+}
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
 void database<Key, Value, KeyCompare, ValueCompare>::open(const std::string &filename) {
@@ -77,6 +81,12 @@ template<class Key, class Value, class KeyCompare, class ValueCompare>
 double database<Key, Value, KeyCompare, ValueCompare>::occupancy_rate() const {
   return _fs.occupancy_rate();
 }
+
+template <class Key, class Value, class KeyCompare, class ValueCompare>
+bool database<Key, Value, KeyCompare, ValueCompare>::empty() const {
+  return _fs.empty();
+}
+
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
 bool database<Key, Value, KeyCompare, ValueCompare>::is_key_equal(
@@ -435,24 +445,25 @@ bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, cons
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const Value &value) {
-  if(occupancy_number() == 0) return;
+bool database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const Value &value) {
+  if(occupancy_number() == 0) return false;
   kv_type kv{key, value};
   NodeSelf node_self = navigate_to_leaf(kv);
-  if(kv_comparer(node_self.node.highkv(), kv)) return;
+  if(kv_comparer(node_self.node.highkv(), kv)) return false;
   int l = 0, r = node_self.node.size - 1;
   while(l < r) {
     int mid = (l + r) >> 1;
     if(kv_comparer(node_self.node.kv[mid], kv)) l = mid + 1;
     else r = mid;
   }
-  if(kv_comparer(kv, node_self.node.kv[l])) return;
+  if(kv_comparer(kv, node_self.node.kv[l])) return false;
   for(int i = l; i < node_self.node.size - 1; ++i)
     node_self.node.kv[i] = node_self.node.kv[i + 1];
   --node_self.node.size;
   // highkey maintenance is completed during erasure_maintain.
   _fs.write(node_self.ptr, node_self.node);
   erasure_maintain(node_self);
+  return true;
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>

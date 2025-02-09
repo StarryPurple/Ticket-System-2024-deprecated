@@ -22,11 +22,11 @@ private:
     kv_type(const Key &the_key, const Value &the_value);
   };
   static constexpr int
-    k_node_size_max = 3072 / sizeof(kv_type),
+    k_node_size_max = (sizeof(kv_type) * 16 / 4096 + 1) * 4096 / sizeof(kv_type),
     k_node_size_min = k_node_size_max / 2 - 3,
     k_node_size_fit = k_node_size_max / 2 + 1;
-  static_assert(k_node_size_max >= 12,
-    "You shall choose smaller Key and Value types");
+  // static_assert(k_node_size_max >= 16,
+  //   "You shall choose smaller Key and Value types");
   struct Node {
     kv_type kv[k_node_size_max + 1]{};
     Nodeptr child[k_node_size_max + 1]{};
@@ -70,7 +70,10 @@ public:
   database& operator=(const database &) = delete;
   database& operator=(database &&) = delete;
 
+  // is_open() == false required.
   void renew(const std::string &filename);
+  // renew current file. is_open() == true required.
+  void renew();
   // open a file.
   // can't open a file not existing.
   // Remember to use renew() function to create one.
@@ -79,13 +82,14 @@ public:
   // returns whether insertion succeeds.
   // possible failure: <key, value> pair already exists.
   bool insert(const Key &key, const Value &value);
-  void erase(const Key &key, const Value &value);
+  bool erase(const Key &key, const Value &value);
   // returns all values with index "key" in the order of ValueCompare.
   vector<Value> list(const Key &key);
 
   bool is_open() const;
   size_t occupancy_number() const;
   double occupancy_rate() const;
+  bool empty() const;
 };
 }
 

@@ -1,4 +1,4 @@
-#include "basic_types.h"
+#include "interface_system.h"
 #include "config.h"
 
 #include <iostream>
@@ -82,16 +82,16 @@ void test_database() {
   db.close();
 }
 
+void test_ticket_system_interface() {
+  std::filesystem::path current_dir = std::filesystem::current_path();
+  std::filesystem::path data_dir = current_dir.parent_path() / "data";
+
+  TicketSystem::InterfaceSystem interface_system;
+  // interface_system.interface(current_dir.string());
+  interface_system.interface(data_dir.string());
+}
+
 int main() {
-  // freopen("../instructions.txt", "r", stdin);
-  // freopen("../answer.txt", "w", stdout);
-  try {
-    // test_filestream();
-    // test_database();
-  } catch(Insomnia::FileSystemException &ex) {
-    std::cout << ex.what() << std::endl;
-  }
-  test_database();
-  // fclose(stdin); fclose(stdout);
+  test_ticket_system_interface();
   return 0;
 }

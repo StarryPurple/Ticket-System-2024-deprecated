@@ -55,6 +55,11 @@ void filestream<Tp, Info>::renew(const std::string &filename) {
   _fstream.close();
 }
 
+template <class Tp, class Info>
+void filestream<Tp, Info>::renew() {
+  renew(_filename);
+}
+
 template<class Tp, class Info>
 void filestream<Tp, Info>::read_info(Info &info) {
   if(!_fstream.is_open())
@@ -174,6 +179,11 @@ double filestream<Tp, Info>::occupancy_rate() const {
   if(!_fstream.is_open())
     throw FileSystemException("No file is open yet");
   return static_cast<double>(_size) / static_cast<double>(k_stat_count);
+}
+
+template <class Tp, class Info>
+bool filestream<Tp, Info>::empty() const {
+  return _size == 0;
 }
 
 

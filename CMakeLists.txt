@@ -7,11 +7,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 include_directories("${PROJECT_SOURCE_DIR}/backend/include")
 
-add_subdirectory(
-    lib
-    backend
+add_subdirectory(lib)
+add_subdirectory(backend)
+
+add_executable(
+    code
+    main.cpp
 )
 
-add_executable(code main.cpp)
 
 target_link_libraries(code PRIVATE ${lib_targets} ${backend_targets})

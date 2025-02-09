@@ -396,7 +396,7 @@ void vector<Tp, Alloc>::reserve(size_t capacity) {
 	}
 	if constexpr(std::is_class_v<Tp>) {
 		for(size_t i = 0; i < _size; ++i)
-			_data[i].~T(); // remember to check while compiling
+			_data[i].~Tp(); // remember to check while compiling
 	}
 	_allocator.deallocate(_data, _capacity);
 

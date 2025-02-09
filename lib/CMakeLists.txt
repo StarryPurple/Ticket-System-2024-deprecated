@@ -1,4 +1,5 @@
-file(GLOB lib_modules "./*")
+file(GLOB lib_modules "*")
+message(STATUS "lib_modules: ${lib_modules}")
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/lib/include
@@ -23,4 +24,5 @@ foreach (module ${lib_modules})
   endif()
 endforeach()
 
+message(STATUS "Lib: ${lib_targets}")
 set(lib_targets ${lib_targets} PARENT_SCOPE)

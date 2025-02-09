@@ -63,9 +63,13 @@ public:
   /** can be used in creating new files and cleaning existing files.
    * will first delete the existing one if it exists, then create a new one and do initialization.
    * remember to check whether the operation succeeded by std::filesystem::exists(file).
-   * @warning close() called first.
+   * @attention is_open() == false required.
    */
   void renew(const std::string &filename);
+  /** can be used in renewing current file.
+   * @attention is_open() == true required.
+   */
+  void renew();
   /** fails if file not exist.
    * close the current opening one first.
    */
@@ -82,6 +86,7 @@ public:
   bool is_open() const;
   size_t occupancy_number() const;
   double occupancy_rate() const;
+  bool empty() const;
 };
 /** @brief Index which behave like the pointers in heap memory management.
  *  @warning No memory-leak protections are implemented so far.

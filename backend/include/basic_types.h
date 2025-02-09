@@ -11,10 +11,14 @@ class Time_hm {
 public:
   using time_dur_t = int; // minutes. maybe better called time_diff_t.
 private:
-  int _hour, _minute;
+  int _hour = -1, _minute = -1;
 public:
+  Time_hm() = default;
   Time_hm(int hour, int minute);
-  time_dur_t operator-(const Time_hm &); // difference in [-3599, 3599]
+  ism::pair<Time_hm, int> add_minutes(const time_dur_t &) const;
+  int self_add_minutes(const time_dur_t &);
+  ism::pair<Time_hm, int> subtract_minutes(const time_dur_t &) const;
+  int self_subtract_minutes(const time_dur_t &);
   std::strong_ordering operator<=>(const Time_hm &) const;
   std::string str() const;
 };
@@ -27,10 +31,14 @@ public:
 private:
   static constexpr int k_month_days[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-  int _month, _day;
+  int _month = -1, _day = -1;
 public:
+  Date_md() = default;
   Date_md(int month, int day);
-  date_dur_t operator-(const Date_md &); // difference in [-364, 364]
+  ism::pair<Date_md, int> add_days(const date_dur_t &) const;
+  int self_add_days(const date_dur_t &);
+  ism::pair<Date_md, int> subtract_minutes(const date_dur_t &) const;
+  int self_subtract_minutes(const date_dur_t &) const;
   std::strong_ordering operator<=>(const Date_md &) const;
   std::string str() const;
 };
@@ -43,16 +51,17 @@ private:
   Time_hm _time_hm;
   Date_md _date_md;
 public:
+  Date() = default;
   Date(const Time_hm &time_hm, const Date_md &date_md);
-  Date add_minutes(const time_dur_t &) const;
-  void self_add_minutes(const time_dur_t &);
-  Date subtract_minutes(const time_dur_t &) const;
-  void self_subtract_minutes(const time_dur_t &);
-  Date add_days(const date_dur_t &) const;
-  void self_add_days(const date_dur_t &);
-  Date subtract_days(const date_dur_t &) const;
-  void self_subtract_days(const date_dur_t &);
-  ism::pair<date_dur_t, time_dur_t> operator-(const Date &); // result members are both positive or both negative.
+  ism::pair<Date, int> add_minutes(const time_dur_t &) const;
+  int self_add_minutes(const time_dur_t &);
+  ism::pair<Date, int> subtract_minutes(const time_dur_t &) const;
+  int self_subtract_minutes(const time_dur_t &);
+  ism::pair<Date, int> add_days(const date_dur_t &) const;
+  int self_add_days(const date_dur_t &);
+  ism::pair<Date, int> subtract_days(const date_dur_t &) const;
+  int self_subtract_days(const date_dur_t &);
+  // ism::pair<date_dur_t, time_dur_t> operator-(const Date &); // result members are both positive or both negative.
   std::strong_ordering operator<=>(const Date &) const;
   std::string str() const;
 };
@@ -64,13 +73,23 @@ public:
   using real_name_t = ism::utf8_string<5>;
   using mail_address_t = ism::ascii_string<30>;
   using privilege_t = int;
+
+  struct ticket_status_t {
+    using ticket_request_t = int;
+    enum class status {failure, success, pending};
+    bool is_pending_accepted;
+    ticket_request_t request_id;
+    std::strong_ordering operator<=>(const ticket_status_t &) const;
+  };
+
 private:
   username_t _username;
   password_t _password;
   real_name_t _real_name;
   mail_address_t _mail_address;
-  privilege_t _privilege;
+  privilege_t _privilege = -1;
 public:
+  User() = default;
   User(
     const username_t &username, const password_t &password, const real_name_t &real_name,
     const mail_address_t &mail_address, const privilege_t &privilege);
@@ -92,18 +111,20 @@ public:
   constexpr static int k_max_station_num = 100;
 private:
   train_id_t _train_id;
-  station_num_t _station_num;
+  station_num_t _station_num {};
   station_name_t _station_names[k_max_station_num];
-  seat_num_t _seat_num;
-  price_t _prices[k_max_station_num - 1];
+  seat_num_t _passenger_capacity {};
+  seat_num_t _unsold_seat_nums[k_max_station_num - 1] {};
+  price_t _prices[k_max_station_num - 1] {};
   time_hm_t _start_time;
-  time_dur_t _travel_times[k_max_station_num - 1];
-  time_dur_t _stopover_times[k_max_station_num - 1];
+  time_dur_t _travel_times[k_max_station_num - 1] {};
+  time_dur_t _stopover_times[k_max_station_num - 1] {};
   date_md_t _sale_date_first, _sale_date_last;
-  train_type_t _train_type;
+  train_type_t _train_type {};
 public:
+  Train() = default;
   Train(
-    const train_id_t &train_id, const station_num_t &station_num, const seat_num_t &seat_num,
+    const train_id_t &train_id, const station_num_t &station_num, const seat_num_t &passenger_capacity,
     const ism::vector<station_name_t> &stations, const ism::vector<price_t> &prices,
     const time_hm_t &start_time, const ism::vector<time_dur_t> &travel_times,
     const ism::vector<time_dur_t> &stopover_times,

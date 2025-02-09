@@ -1,5 +1,10 @@
-include_directories("${PROJECT_SOURCE_DIR}/lib/include")
-file(GLOB backend_modules "./*")
+include_directories(
+    "${PROJECT_SOURCE_DIR}/lib/include"
+    "${PROJECT_SOURCE_DIR}/lib/template"
+)
+
+file(GLOB backend_modules "*")
+# message(STATUS "backend_modules: ${backend_modules}")
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/backend/include
@@ -24,4 +29,5 @@ foreach (module ${backend_modules})
   endif()
 endforeach()
 
+# message(STATUS "Backend: ${backend_targets}")
 set(backend_targets ${backend_targets} PARENT_SCOPE)

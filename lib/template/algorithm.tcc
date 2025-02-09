@@ -24,5 +24,7 @@ void sort(RAIt begin, RAIt end, const Compare &comp) {
   sort(begin, pivot_it, comp);
   sort(pivot_it + 1, end, comp);
 }
+
 }
+
 #endif // INSOMNIA_ALGORITHM_TCC

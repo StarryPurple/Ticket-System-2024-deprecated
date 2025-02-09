@@ -13,6 +13,9 @@ template<
   class Compare = std::less<typename std::iterator_traits<RAIt>::value_type>>
 void sort(RAIt begin, RAIt end, const Compare &comp);
 
+// out_of_range not handled.
+int stoi(const std::string &str);
+
 }
 
 #include "algorithm.tcc"
