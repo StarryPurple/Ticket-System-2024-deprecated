@@ -138,6 +138,11 @@ BackendSystem::DatabaseSet::~DatabaseSet() {
   close();
 }
 
+BackendSystem::DatabaseSet::station_info_t::station_info_t(
+  const Train::train_id_t &_train_id, const station_order_t &_order)
+  : train_id(_train_id), order(_order) {}
+
+
 void BackendSystem::UserManager::startup(DatabaseSet &_db_set) {
   db_set = &_db_set;
   active_users.clear();
@@ -218,7 +223,7 @@ BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
       result = func_list[i](sorted_arglist);
       break;
     }
-  std::cout << result.info << std::endl;
+  std::cout << '[' << command.timestamp << ']' << ' ' << result.info << std::endl;
   return result.signal;
   /*
   if(command.cmd_name == "add_user")
@@ -270,6 +275,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::login(const arglist_t &arg
   // {{'u', ""}, {'p', ""}}
   User::username_t username = args.at('u');
   User::password_t password = args.at('p');
+
   auto user_index_list = db_set->user_index_db.list(username);
   if(user_index_list.empty()) return {"-1", Signal::sig_normal};
   auto user = db_set->user_db.list(user_index_list[0])[0];
@@ -281,6 +287,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::login(const arglist_t &arg
 BackendSystem::ReturnInfo BackendSystem::UserManager::logout(const arglist_t &args) {
   // {{'u', ""}}
   User::username_t username = args.at('u');
+
   auto iter = active_users.find(username);
   if(iter == active_users.end()) return {"-1", Signal::sig_normal};
   active_users.erase(iter);
@@ -290,36 +297,327 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::logout(const arglist_t &ar
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::query_profile(const arglist_t &args) {
   // {{'c', ""}, {'u', ""}}
+  User::username_t cur_username = args.at('c');
+  User::username_t username = args.at('u');
 
+  if(!active_users.contains(cur_username)) return {"-1", Signal::sig_normal};
+  auto index_list = db_set->user_index_db.list(username);
+  if(index_list.empty()) return {"-1", Signal::sig_normal};
+  User cur_user = db_set->user_db.list(db_set->user_index_db.list(cur_username)[0])[0];
+  User user = db_set->user_db.list(index_list[0])[0];
+  if(cur_user.privilege < user.privilege) return {"-1", Signal::sig_normal};
+  return {user.str(), Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::modify_profile(const arglist_t &args) {
   // {{'c', ""}, {'u', ""}, {'p', ""}, {'n', ""}, {'m', ""}, {'g', ""}}
+  User::username_t cur_username = args.at('c');
+  User::username_t username = args.at('u');
+  User::password_t password = args.at('p');
+  User::real_name_t real_name = args.at('n');
+  User::mail_addr_t mail_addr = args.at('m');
+  User::privilege_t privilege = ism::stoi(args.at('g'));
+
+  if(!active_users.contains(cur_username)) return {"-1", Signal::sig_normal};
+  auto index_list = db_set->user_index_db.list(username);
+  if(index_list.empty()) return {"-1", Signal::sig_normal};
+  User cur_user = db_set->user_db.list(db_set->user_index_db.list(cur_username)[0])[0];
+  auto user_index = index_list[0];
+  User user = db_set->user_db.list(user_index)[0];
+  if(cur_user.privilege < user.privilege) return {"-1", Signal::sig_normal};
+  if(cur_user.privilege < user.privilege || cur_user.privilege <= privilege) return {"-1", Signal::sig_normal};
+
+  db_set->user_db.erase(user_index, user);
+  if(!args.at('p').empty()) user.password = password;
+  if(!args.at('n').empty()) user.real_name = real_name;
+  if(!args.at('m').empty()) user.mail_addr = mail_addr;
+  if(!args.at('g').empty()) user.privilege = privilege;
+  db_set->user_db.insert(user_index, user);
+  return {user.str(), Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::add_train(const arglist_t &args) {
   // {'i', ""}, {'n', ""}, {'m', ""}, {'s', ""}, {'p', ""}, {'x', ""},
   // {'t', ""}, {'o', ""}, {'d', ""}, {'y', ""}
+  Train::train_id_t train_id = args.at('i');
+  if(!db_set->train_index_db.list(train_id).empty()) return {"-1", Signal::sig_normal};
+  Train::station_num_t station_num = ism::stoi(args.at('n'));
+  Train::seat_num_t passenger_capacity = ism::stoi(args.at('m'));
+  ism::vector<std::string> station_names_str = ism::string_split(args.at('s'), '|');
+  ism::vector<Train::station_name_t> station_names;
+  for(const auto &st: station_names_str) station_names.push_back(st);
+  ism::vector<std::string> prices_str = ism::string_split(args.at('p'), '|');
+  ism::vector<Train::price_t> prices;
+  for(const auto &pr: prices_str) prices.push_back(ism::stoi(pr));
+  Train::time_hm_t start_time = args.at('x');
+  ism::vector<std::string> travel_times_str = ism::string_split(args.at('t'), '|');
+  ism::vector<Train::time_dur_t> travel_times;
+  for(const auto &tr: travel_times_str) travel_times.push_back(ism::stoi(tr));
+  ism::vector<std::string> stopover_times_str = ism::string_split(args.at('o'), '|');
+  ism::vector<Train::time_dur_t> stopover_times;
+  if(station_num > 2)
+    for(const auto &st: stopover_times_str) stopover_times.push_back(ism::stoi(st));
+  ism::vector<std::string> sale_dates_str = ism::string_split(args.at('d'), '|');
+  ism::vector<Train::date_md_t> sale_dates;
+  for(const auto &sa: sale_dates_str) sale_dates.push_back(sa);
+  Train::train_type_t train_type = args.at('y')[0];
+
+  Train train{train_id, station_num, passenger_capacity, station_names, prices, start_time,
+              travel_times, stopover_times, sale_dates[0], sale_dates[1], train_type};
+  auto train_index = ++db_set->info.train_index_tot;
+  db_set->train_index_db.insert(train_id, train_index);
+  db_set->train_db.insert(train_index, train);
+  for(int i = 0; i < station_num; ++i)
+    db_set->station_db.insert(station_names[i], {train_id, i});
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::delete_train(const arglist_t &args) {
   // {{'i', ""}}
+  Train::train_id_t train_id = args.at('i');
+
+  auto train_index_list = db_set->train_index_db.list(train_id);
+  if(train_index_list.empty()) return {"-1", Signal::sig_normal};
+  auto train_index = train_index_list[0];
+  Train train = db_set->train_db.list(train_index)[0];
+  if(train.has_released) return {"-1", Signal::sig_normal};
+  db_set->train_db.erase(train_index, train);
+  db_set->train_index_db.erase(train_id, train_index);
+  for(int i = 0; i < train.station_num; ++i)
+    db_set->station_db.erase(train.station_names[i], {train.train_id, i});
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::release_train(const arglist_t &args) {
   // {{'i', ""}}
+  Train::train_id_t train_id = args.at('i');
+
+  auto train_index_list = db_set->train_index_db.list(train_id);
+  if(train_index_list.empty()) return {"-1", Signal::sig_normal};
+  auto train_index = train_index_list[0];
+  Train train = db_set->train_db.list(train_index)[0];
+  if(train.has_released) return {"-1", Signal::sig_normal};
+
+  db_set->train_db.erase(train_index, train);
+  train.has_released = true;
+  db_set->train_db.insert(train_index, train);
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_train(const arglist_t &args) {
   // {{'i', ""}, {'d', ""}}
+  Train::train_id_t train_id = args.at('i');
+  Date_md date_md = args.at('d');
+
+  auto train_index_list = db_set->train_index_db.list(train_id);
+  if(train_index_list.empty()) return {"-1", Signal::sig_normal};
+  auto train_index = train_index_list[0];
+  Train train = db_set->train_db.list(train_index)[0];
+  if(date_md < train.sale_date_first || date_md > train.sale_date_last) return {"-1", Signal::sig_normal};
+  std::string result = train.train_id.str() + train.train_type;
+  for(int i = 0; i < train.station_num; ++i)
+    result += '\n' + train.station_profile(date_md, i);
+  return {result, Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_ticket(const arglist_t &args) {
   // {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}}
+  Train::station_name_t start_station = args.at('s');
+  Train::station_name_t terminal_station = args.at('t');
+  Date_md date_md_mid = args.at('d');
+  std::string sort_type = args.at('p');
+
+  struct Temp {
+    std::string info;
+    Train::train_id_t train_id;
+    Train::time_dur_t time;
+    Train::price_t cost;
+  };
+
+  ism::vector<Temp> res_list;
+
+  const auto train_list_s = db_set->station_db.list(start_station);
+  const auto train_list_t = db_set->station_db.list(terminal_station);
+  for(int i = 0, j = 0; i < train_list_s.size() && j < train_list_t.size(); ) {
+    if(train_list_s[i].train_id < train_list_t[j].train_id) {++i; continue;}
+    else if(train_list_s[i].train_id > train_list_t[j].train_id) {++j; continue;}
+    if(train_list_s[i].order >= train_list_t[j].order) {++i; ++j; continue;}
+    const Train &train = db_set->train_db.list(db_set->train_index_db.list(train_list_t[j].train_id)[0])[0];
+    const int index_s = train_list_s[i].order;
+    const int index_t = train_list_t[j].order;
+    Date last_date_mid = Date{train.sale_date_last, train.start_time}.add_minutes(train.leaving_time_diff[index_s]);
+    auto days_diff = last_date_mid.date_md - date_md_mid;
+    Date_md date_md_s = train.sale_date_last.subtract_days(days_diff);
+    if(date_md_s < train.sale_date_first || date_md_s > train.sale_date_last) {++i; ++j; continue;}
+    Date date_s = {date_md_s, train.start_time};
+    Temp temp;
+    temp.info = train.train_id.str() + ' ' + start_station.str() + ' ' +
+                date_s.add_minutes(train.leaving_time_diff[index_s]).str() + " -> " +
+                terminal_station.str() + ' ' +
+                date_s.add_minutes(train.arriving_time_diff[index_t]).str();
+    Train::price_t price = train.accumulated_prices[index_t] - train.accumulated_prices[index_s];
+    Train::seat_num_t seat_num = Train::k_max_seat_num + 1;
+    for(int k = index_s; k < index_t; ++k)
+      if(seat_num > train.unsold_seat_nums[k]) seat_num = train.unsold_seat_nums[k];
+    temp.info += ' ' + ism::itos(price) + ' ' + ism::itos(seat_num);
+    temp.time = train.arriving_time_diff[index_t] - train.leaving_time_diff[index_s];
+    temp.cost = price;
+    temp.train_id = train.train_id;
+    res_list.push_back(temp);
+    ++i; ++j;
+  }
+  if(sort_type == "time")
+    ism::sort(res_list.begin(), res_list.end(), [](const Temp &lhs, const Temp &rhs) {
+      if(lhs.time == rhs.time) return lhs.train_id < rhs.train_id;
+      return lhs.time < rhs.time;
+    });
+  else if(sort_type == "cost")
+    ism::sort(res_list.begin(), res_list.end(), [](const Temp &lhs, const Temp &rhs) {
+      if(lhs.cost == rhs.cost) return lhs.train_id < rhs.train_id;
+      return lhs.cost < rhs.cost;
+    });
+  std::string result = ism::itos(res_list.size());
+  for(auto &temp: res_list) result += '\n' + temp.info;
+  return {result, Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const arglist_t &args) {
   // {{'s', ""}, {'t', ""}, {'d', ""}, {'p', "time"}}
+  Train::station_name_t start_station = args.at('s');
+  Train::station_name_t terminal_station = args.at('t');
+  Date_md date_md_mid1 = args.at('d');
+  std::string sort_type = args.at('p');
+
+  Train::time_dur_t time_inf = 2 * Train::k_max_total_travel_time + 1; // inf
+  Train::price_t cost_inf = (Train::k_max_station_num - 1) * Train::k_max_price + 1; // inf
+
+  struct Info {
+    Train train1, train2;
+    Train::station_order_t order1s, order1t, order2s, order2t;
+    Date date1s, date1t, date2s, date2t;
+    Train::time_dur_t time = time_inf;
+    Train::price_t cost = cost_inf;
+    std::string str() const {
+      std::string res;
+      res += train1.train_id.str() + ' ' + train1.station_names[order1s].str() + ' ';
+      res += date1s.str() + " -> ";
+      res += train1.station_names[order1t].str() + ' ';
+      res += date1t.str() + ' ';
+      res += ism::itos(train1.accumulated_prices[order1t] - train1.accumulated_prices[order1s]);
+      Train::seat_num_t seat_num1 = Train::k_max_seat_num + 1;
+      for(int i = order1s; i < order1t; ++i)
+        if(seat_num1 > train1.unsold_seat_nums[i]) seat_num1 = train1.unsold_seat_nums[i];
+      res += ism::itos(seat_num1);
+      res += '\n';
+      res += train2.train_id.str() + ' ' + train2.station_names[order2s].str() + ' ';
+      res += date2s.str() + " -> ";
+      res += train2.station_names[order2t].str() + ' ';
+      res += date2t.str() + ' ';
+      res += ism::itos(train2.accumulated_prices[order2t] - train2.accumulated_prices[order2s]);
+      Train::seat_num_t seat_num2 = Train::k_max_seat_num + 1;
+      for(int i = order2s; i < order2t; ++i)
+        if(seat_num2 > train2.unsold_seat_nums[i]) seat_num1 = train2.unsold_seat_nums[i];
+      res += ism::itos(seat_num2);
+      return res;
+    }
+  };
+
+  auto less_comp = [sort_type](const Info &lhs, const Info &rhs) -> bool {
+    if(sort_type == "time") {
+      if(lhs.time != rhs.time) return lhs.time < rhs.time;
+      if(lhs.cost != rhs.cost) return lhs.cost < rhs.cost;
+      if(lhs.train1 != rhs.train1) return lhs.train1 < rhs.train1;
+      return lhs.train2 < rhs.train2;
+    } else if(sort_type == "price") {
+      if(lhs.cost != rhs.cost) return lhs.cost < rhs.cost;
+      if(lhs.time != rhs.time) return lhs.time < rhs.time;
+      if(lhs.train1 != rhs.train1) return lhs.train1 < rhs.train1;
+      return lhs.train2 < rhs.train2;
+    }
+    // shouldn't reach here.
+    if(lhs.train1 != rhs.train1) return lhs.train1 < rhs.train1;
+    return lhs.train2 < rhs.train2;
+  };
+
+  Info info;
+
+
+  const auto train_list_s = db_set->station_db.list(start_station);
+  const auto train_list_t = db_set->station_db.list(terminal_station);
+
+  struct station_t {
+    Train::station_name_t station_name;
+    Train train;
+    Train::station_order_t order_s, order_t;
+  };
+
+  ism::vector<station_t> station_list_s, station_list_t;
+  for(const auto &[train_id, order]: train_list_s) {
+    Train train = db_set->train_db.list(db_set->train_index_db.list(train_id)[0])[0];
+    for(int i = order + 1; i < train.station_num; ++i)
+      station_list_s.push_back(station_t{train.station_names[i], train, order, i});
+  }
+  ism::sort(station_list_s.begin(), station_list_s.end(), [](const station_t &lhs, const station_t &rhs) {
+    if(lhs.station_name == rhs.station_name) return lhs.train < rhs.train;
+    return lhs.station_name < rhs.station_name;
+  });
+  for(const auto &[train_id, order]: train_list_t) {
+    Train train = db_set->train_db.list(db_set->train_index_db.list(train_id)[0])[0];
+    for(int i = 0; i < order; ++i)
+      station_list_s.push_back(station_t{train.station_names[i], train, i, order});
+  }
+  ism::sort(station_list_t.begin(), station_list_t.end(), [](const station_t &lhs, const station_t &rhs) {
+    if(lhs.station_name == rhs.station_name) return lhs.train < rhs.train;
+    return lhs.station_name < rhs.station_name;
+  });
+
+  for(int i_start = 0, j_start = 0; i_start < station_list_s.size() && j_start < station_list_t.size(); ) {
+    if(station_list_s[i_start].station_name < station_list_t[j_start].station_name) {++i_start; continue;}
+    if(station_list_s[i_start].station_name > station_list_t[j_start].station_name) {++j_start; continue;}
+    const auto &station_name = station_list_t[j_start].station_name;
+    int i_end = i_start, j_end = j_start;
+    while(i_end + 1 < station_list_s.size() && station_list_s[i_end + 1].station_name == station_name)
+      ++i_end;
+    while(j_end + 1 < station_list_t.size() && station_list_t[j_end + 1].station_name == station_name)
+      ++j_end;
+    for(int i = i_start; i <= i_end; ++i)
+      for(int j = j_start; j <= j_end; ++j) {
+        if(station_list_s[i].train == station_list_t[j].train) continue;
+        const Train &tr1 = station_list_s[i].train, &tr2 = station_list_t[j].train;
+        const Train::station_order_t
+          order1s = station_list_s[i].order_s, order1t = station_list_s[i].order_t,
+          order2s = station_list_t[j].order_s, order2t = station_list_t[j].order_t;
+        Date end_date1s = Date{tr1.sale_date_last, tr1.start_time}.add_minutes(tr1.leaving_time_diff[order1s]);
+        auto day_diff1 = end_date1s.date_md - date_md_mid1;
+        Date_md start_date_md1 = tr1.sale_date_last.subtract_days(day_diff1);
+        if(start_date_md1 < tr1.sale_date_first || start_date_md1 > tr1.sale_date_last) continue;
+        Date start_date1 = {start_date_md1, tr1.start_time};
+        Date date1s = start_date1.add_minutes(tr1.leaving_time_diff[order1s]);
+        Date date1t = start_date1.add_minutes(tr1.arriving_time_diff[order1t]);
+        Date_md date_md_mid2 = date1t.date_md;
+        if(date1t.time_hm > tr2.start_time) date_md_mid2 = date_md_mid2.add_days(1);
+        Date end_date2s = Date{tr2.sale_date_last, tr2.start_time}.add_minutes(tr2.leaving_time_diff[order2s]);
+        auto day_diff2 = end_date2s.date_md - date_md_mid2;
+        Date_md start_date_md2 = tr2.sale_date_last.subtract_days(day_diff2);
+        if(start_date_md2 < tr2.sale_date_first || start_date_md2 > tr2.sale_date_last) continue;
+        Date start_date2 = {start_date_md2, tr2.start_time};
+        Date date2s = start_date2.add_minutes(tr2.leaving_time_diff[order2s]);
+        Date date2t = start_date2.add_minutes(tr2.arriving_time_diff[order2t]);
+
+        Train::time_dur_t time = date2t.get_diff_minutes(date1s);
+        Train::price_t price =
+          (tr1.accumulated_prices[order1t] - tr1.accumulated_prices[order1s]) +
+          (tr2.accumulated_prices[order2t] - tr2.accumulated_prices[order2s]);
+        Info current{tr1, tr2, order1s, order1t, order2s, order2t,
+                     date1s, date1t, date2s, date2t, time, price};
+        if(less_comp(current, info)) info = current;
+      }
+    i_start = i_end + 1;
+    j_start = j_start + 1;
+  }
+
+  if(info.time == time_inf && info.cost == cost_inf) return {"0", Signal::sig_normal};
+  return {info.str(), Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t &args) {

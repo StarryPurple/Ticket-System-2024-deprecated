@@ -27,7 +27,8 @@ public:
   ConstString &operator=(const std::string &str);
   ConstString &operator=(const ConstString &other);
   ConstString &operator=(ConstString &&other);
-  const char *to_str() const;
+  const char *cstr() const;
+  std::string str() const;
   // template<int other_length>
   // ConstString<length + other_length, CharT> operator+(const ConstString<CharT, other_length>& other);
   bool operator==(const ConstString &) const;

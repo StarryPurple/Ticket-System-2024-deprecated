@@ -47,9 +47,20 @@ private:
     using train_index_t = int;
     ism::database<train_index_t, Train> train_db;
     ism::database<Train::train_id_t, train_index_t> train_index_db;
-    using station_order_t = int; // the order number that this station is on the route of the train
-    ism::database<Train::station_name_t, ism::pair<Train, station_order_t>> station_db;
-
+    struct station_info_t {
+      using station_order_t = Train::station_order_t; // the order number that this station is on the route of the train
+      Train::train_id_t train_id;
+      station_order_t order;
+      station_info_t() = default;
+      station_info_t(const Train::train_id_t &_train_id, const station_order_t &_order);
+      bool operator==(const station_info_t &) const;
+      bool operator!=(const station_info_t &) const;
+      bool operator<(const station_info_t &) const;
+      bool operator>(const station_info_t &) const;
+      bool operator<=(const station_info_t &) const;
+      bool operator>=(const station_info_t &) const;
+    };
+    ism::database<Train::station_name_t, station_info_t> station_db;
     struct info_t {
       user_index_t user_index_tot;
       user_index_t train_index_tot;

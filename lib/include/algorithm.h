@@ -1,8 +1,10 @@
 #ifndef INSOMNIA_ALGORITHM_H
 #define INSOMNIA_ALGORITHM_H
 
-#include "iterator"
-#include "functional"
+#include "vector.h"
+
+#include <iterator>
+#include <functional>
 
 namespace Insomnia {
 
@@ -14,7 +16,12 @@ template<
 void sort(RAIt begin, RAIt end, const Compare &comp);
 
 // out_of_range not handled.
+// returns 0 when string is empty.
 int stoi(const std::string &str);
+
+std::string itos(int n);
+
+vector<std::string> string_split(const std::string &str, const char separator);
 
 }
 

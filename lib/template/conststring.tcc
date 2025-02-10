@@ -62,9 +62,15 @@ ConstString<length> &ConstString<length>::operator=(ConstString &&other) {
 }
 
 template<int length>
-const char *ConstString<length>::to_str() const {
+const char *ConstString<length>::cstr() const {
   return _str;
 }
+
+template<int length>
+std::string ConstString<length>::str() const {
+  return _str;
+}
+
 
 template<int length>
 bool ConstString<length>::operator==(const ConstString &other) const {
