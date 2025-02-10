@@ -21,6 +21,8 @@ int stoi(const std::string &str);
 
 std::string itos(int n);
 
+std::string lltos(long long n);
+
 vector<std::string> string_split(const std::string &str, const char separator);
 
 }

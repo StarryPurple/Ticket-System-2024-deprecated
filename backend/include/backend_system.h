@@ -42,8 +42,9 @@ private:
     using user_index_t = int;
     ism::database<user_index_t, User> user_db;
     ism::database<User::username_t, user_index_t> user_index_db;
-    ism::database<user_index_t, ticket_status_t> user_ticket_status_db;
-    ism::dataset<ticket_status_t> pending_ticket_status_ds;
+    ism::database<user_index_t, ticket_status_t::ticket_request_t> user_ticket_status_index_db;
+    ism::database<ticket_status_t::ticket_request_t, ticket_status_t> ticket_status_db;
+    ism::dataset<ticket_status_t::ticket_request_t> pending_ticket_status_ds;
     using train_index_t = int;
     ism::database<train_index_t, Train> train_db;
     ism::database<Train::train_id_t, train_index_t> train_index_db;
@@ -63,7 +64,8 @@ private:
     ism::database<Train::station_name_t, station_info_t> station_db;
     struct info_t {
       user_index_t user_index_tot;
-      user_index_t train_index_tot;
+      train_index_t train_index_tot;
+      ticket_status_t::ticket_request_t ticket_request_tot;
     };
     info_t info;
     ism::info_recorder<info_t> info_rec;

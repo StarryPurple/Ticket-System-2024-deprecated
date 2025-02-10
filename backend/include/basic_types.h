@@ -43,6 +43,7 @@ struct Date_md {
   date_dur_t operator-(const Date_md &) const;
   std::strong_ordering operator<=>(const Date_md &) const;
   std::string str() const;
+  int exact_number() const;
 };
 
 struct Date {
@@ -99,6 +100,7 @@ public:
   using station_name_t = ism::utf8_string<10>;
   using seat_num_t = int;
   using price_t = int;
+  using total_price_t = long long;
   using time_hm_t = Time_hm;
   using time_dur_t = time_hm_t::time_dur_t;
   using date_md_t = Date_md;
@@ -109,13 +111,14 @@ public:
   constexpr static seat_num_t k_max_seat_num = 100000;
   constexpr static time_dur_t k_max_total_travel_time = 43200;
   constexpr static price_t k_max_price = 10000;
+  constexpr static int k_max_days = 92;
 
   train_id_t train_id;
   station_num_t station_num {};
   station_name_t station_names[k_max_station_num];
   seat_num_t passenger_capacity {};
   // from station i to station i + 1. size = st_num - 1.
-  seat_num_t unsold_seat_nums[k_max_station_num] {};
+  seat_num_t unsold_seat_nums[k_max_days][k_max_station_num] {};
   // from station 0 to station i. a_p[0] = 0.
   price_t accumulated_prices[k_max_station_num] {};
   time_hm_t start_time;
@@ -146,9 +149,23 @@ public:
 
 struct ticket_status_t {
   using ticket_request_t = int;
-  enum class status {failure, success, pending};
-  bool is_pending_accepted;
+  enum class status_t {success, pending, refunded};
+  status_t status;
   ticket_request_t request_id;
+  Train::train_id_t train_id;
+  Date_md start_date_md;
+  Train::station_order_t order_s, order_t;
+  Train::station_name_t start_station, terminal_station;
+  Date date_s, date_t;
+  Train::total_price_t total_price;
+  Train::seat_num_t amount;
+  std::string str() const;
+  bool operator==(const ticket_status_t &) const;
+  bool operator!=(const ticket_status_t &) const;
+  bool operator<(const ticket_status_t &) const;
+  bool operator>(const ticket_status_t &) const;
+  bool operator<=(const ticket_status_t &) const;
+  bool operator>=(const ticket_status_t &) const;
 };
 }
 

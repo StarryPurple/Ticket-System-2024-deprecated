@@ -28,6 +28,24 @@ std::string itos(int n) {
   return str;
 }
 
+std::string lltos(long long n) {
+  if(n == 0) return "0";
+  bool flag = false;
+  if(n < 0) {
+    flag = true;
+    n = -n;
+  }
+  std::string rev, str;
+  while(n > 0) {
+    rev += ('0' + n % 10);
+    n /= 10;
+  }
+  if(flag) str += '-';
+  for(int i = rev.length() - 1; i >= 0; --i)
+    str += rev[i];
+  return str;
+}
+
 vector<std::string> string_split(const std::string &str, const char separator) {
   vector<std::string> res;
   std::string res_str;

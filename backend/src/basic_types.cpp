@@ -89,7 +89,9 @@ Train::Train(
       sale_date_first(_sale_date_first), sale_date_last(_sale_date_last), train_type(_train_type),
       has_released(false) {
   for(int i = 0; i < _station_num - 1; ++i) station_names[i] = _station_names[i];
-  for(int i = 0; i < _station_num - 1; ++i) unsold_seat_nums[i] = passenger_capacity;
+  for(int i = 0; i < k_max_days; ++i)
+    for(int j = 0; j < _station_num - 1; ++j)
+      unsold_seat_nums[i][j] = passenger_capacity;
   accumulated_prices[0] = 0;
   for(int i = 1; i <= _station_num - 1; ++i)
     accumulated_prices[i] = accumulated_prices[i - 1] + _prices[i - 1];
@@ -119,7 +121,7 @@ std::string Train::station_profile(const Date_md &start_date, int route_index) c
   res += ism::itos(accumulated_prices[route_index]);
   res += ' ';
   if(route_index == station_num - 1) res += 'x';
-  else res += ism::itos(unsold_seat_nums[route_index]);
+  else res += ism::itos(unsold_seat_nums[start_date.exact_number()][route_index]);
   return res;
 }
 
@@ -143,6 +145,48 @@ bool Train::operator>=(const Train &other) const {return train_id >= other.train
 
 
 
+// struct ticket_status_t
+
+std::string ticket_status_t::str() const {
+  std::string res;
+  res += '[';
+  if(status == status_t::success) res += "success";
+  else if(status == status_t::pending) res += "pending";
+  else if(status == status_t::refunded) res += "refunded";
+  res += ']';
+  res += ' ' + train_id.str();
+  res += ' ' + start_station.str();
+  res += ' ' + date_s.str();
+  res += " -> " + terminal_station.str();
+  res += ' ' + date_t.str();
+  res += ' ' + ism::lltos(total_price);
+  res += ' ' + ism::itos(amount);
+  return res;
+}
+
+bool ticket_status_t::operator==(const ticket_status_t &other) const {
+  return request_id == other.request_id;
+}
+
+bool ticket_status_t::operator!=(const ticket_status_t &other) const {
+  return request_id != other.request_id;
+}
+
+bool ticket_status_t::operator<(const ticket_status_t &other) const {
+  return request_id < other.request_id;
+}
+
+bool ticket_status_t::operator>(const ticket_status_t &other) const {
+  return request_id > other.request_id;
+}
+
+bool ticket_status_t::operator<=(const ticket_status_t &other) const {
+  return request_id <= other.request_id;
+}
+
+bool ticket_status_t::operator>=(const ticket_status_t &other) const {
+  return request_id >= other.request_id;
+}
 
 
 
