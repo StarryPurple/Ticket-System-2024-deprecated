@@ -53,6 +53,7 @@ void filestream<Tp, Info>::renew(const std::string &filename) {
   Info info;
   _fstream.write(reinterpret_cast<const char *>(&info), sizeof(info));
   _fstream.close();
+  _size = 0;
 }
 
 template <class Tp, class Info>
@@ -72,6 +73,7 @@ void filestream<Tp, Info>::renew() {
   _fstream.write(reinterpret_cast<const char *>(&ph_uint), sizeof(ph_uint)); // _size
   Info info;
   _fstream.write(reinterpret_cast<const char *>(&info), sizeof(info));
+  _size = 0;
 }
 
 template<class Tp, class Info>
@@ -99,7 +101,7 @@ void filestream<Tp, Info>::find_unallocated() {
     return;
   }
   _last_visited = 0;
-  while(_last_visited < fs_constant::k_stat_count) {
+  while(_last_visited < k_stat_count) {
     if(_stat[_last_visited >> 5] & (1 << (_last_visited & 31))) {
       ++_last_visited; continue;
     }

@@ -53,7 +53,7 @@ BackendSystem::BackendSystem()
 
     [this](const arglist_t &args){return _user_mgr.query_order(args);},
     [this](const arglist_t &args){return _user_mgr.refund_ticket(args);},
-    [this](const arglist_t &args){return _db_set.clean(args);},
+    [this](const arglist_t &args){return clean(args);},
     [this](const arglist_t &args){return exit(args);},
   } {}
 
@@ -202,7 +202,7 @@ bool BackendSystem::startup(const std::string &data_dir) {
   bool open_success = _db_set.open(data_dir);
   if(!open_success) {
     _db_set.renew(data_dir);
-    _db_set.open(data_dir);
+    open_success = _db_set.open(data_dir);
   }
   if(!open_success) return false;
   _user_mgr.startup(_db_set);
@@ -325,6 +325,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::login(const arglist_t &arg
   User::username_t username = args.at('u');
   User::password_t password = args.at('p');
 
+  if(active_users.contains(username)) return {"-1", Signal::sig_normal};
   auto user_index_list = db_set->user_index_db.list(username);
   if(user_index_list.empty()) return {"-1", Signal::sig_normal};
   auto user = db_set->user_db.list(user_index_list[0])[0];
@@ -463,7 +464,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_train(const arglist
   auto train_index = train_index_list[0];
   Train train = db_set->train_db.list(train_index)[0];
   if(date_md < train.sale_date_first || date_md > train.sale_date_last) return {"-1", Signal::sig_normal};
-  std::string result = train.train_id.str() + train.train_type;
+  std::string result = train.train_id.str() + ' ' + train.train_type;
   for(int i = 0; i < train.station_num; ++i)
     result += '\n' + train.station_profile(date_md, i);
   return {result, Signal::sig_normal};
@@ -548,25 +549,27 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
     Train::price_t cost = Train::k_cost_inf;
     std::string str() const {
       std::string res;
-      res += train1.train_id.str() + ' ' + train1.station_names[order1s].str() + ' ';
-      res += date1s.str() + " -> ";
-      res += train1.station_names[order1t].str() + ' ';
-      res += date1t.str() + ' ';
-      res += ism::itos(train1.accumulated_prices[order1t] - train1.accumulated_prices[order1s]);
+      res += train1.train_id.str();
+      res += ' ' + train1.station_names[order1s].str();
+      res += ' ' + date1s.str();
+      res += " -> " + train1.station_names[order1t].str();
+      res += ' ' + date1t.str();
+      res += ' ' + ism::itos(train1.accumulated_prices[order1t] - train1.accumulated_prices[order1s]);
       Train::seat_num_t seat_num1 = Train::k_max_seat_num + 1;
       for(int i = order1s; i < order1t; ++i)
         if(seat_num1 > train1.unsold_seat_nums[date_exact1][i]) seat_num1 = train1.unsold_seat_nums[date_exact1][i];
-      res += ism::itos(seat_num1);
+      res += ' ' + ism::itos(seat_num1);
       res += '\n';
-      res += train2.train_id.str() + ' ' + train2.station_names[order2s].str() + ' ';
-      res += date2s.str() + " -> ";
-      res += train2.station_names[order2t].str() + ' ';
-      res += date2t.str() + ' ';
-      res += ism::itos(train2.accumulated_prices[order2t] - train2.accumulated_prices[order2s]);
+      res += train2.train_id.str();
+      res += ' ' + train2.station_names[order2s].str();
+      res += ' ' + date2s.str();
+      res += " -> " + train2.station_names[order2t].str();
+      res += ' ' + date2t.str();
+      res += ' ' + ism::itos(train2.accumulated_prices[order2t] - train2.accumulated_prices[order2s]);
       Train::seat_num_t seat_num2 = Train::k_max_seat_num + 1;
       for(int i = order2s; i < order2t; ++i)
-        if(seat_num2 > train2.unsold_seat_nums[date_exact2][i]) seat_num1 = train2.unsold_seat_nums[date_exact2][i];
-      res += ism::itos(seat_num2);
+        if(seat_num2 > train2.unsold_seat_nums[date_exact2][i]) seat_num2 = train2.unsold_seat_nums[date_exact2][i];
+      res += ' ' + ism::itos(seat_num2);
       return res;
     }
   };
@@ -613,7 +616,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
   for(const auto &[train_id, order]: train_list_t) {
     Train train = db_set->train_db.list(db_set->train_index_db.list(train_id)[0])[0];
     for(int i = 0; i < order; ++i)
-      station_list_s.push_back(station_t{train.station_names[i], train, i, order});
+      station_list_t.push_back(station_t{train.station_names[i], train, i, order});
   }
   ism::sort(station_list_t.begin(), station_list_t.end(), [](const station_t &lhs, const station_t &rhs) {
     if(lhs.station_name == rhs.station_name) return lhs.train < rhs.train;
@@ -682,7 +685,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
   Train::seat_num_t seat_num = ism::stoi(args.at('n'));
   Train::station_name_t start_station = args.at('f');
   Train::station_name_t terminal_station = args.at('t');
-  bool accept_queue = (args.at('t') == "true");
+  bool accept_queue = (args.at('q') == "true");
 
   if(!active_users.contains(username)) return {"-1", Signal::sig_normal};
   // can we afford this?
@@ -709,8 +712,8 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
   for(int i = order_s; i < order_t; ++i)
     if(seat_num_left > train.unsold_seat_nums[day_exact][i])
       seat_num_left = train.unsold_seat_nums[day_exact][i];
-  Train::total_price_t total_price =
-    1ll * seat_num * (train.accumulated_prices[order_t] - train.accumulated_prices[order_s]);
+  Train::price_t price =
+    train.accumulated_prices[order_t] - train.accumulated_prices[order_s];
   if(seat_num_left >= seat_num) {
     db_set->train_db.erase(train_index, train);
     for(int i = order_s; i < order_t; ++i)
@@ -719,17 +722,17 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     auto ticket_request_index = ++db_set->info.ticket_request_tot;
     ticket_status_t ticket_status{ticket_status_t::status_t::success,
       ticket_request_index, train_id, start_date_md, order_s, order_t,
-      start_station, terminal_station, date_s, date_t, total_price, seat_num};
+      start_station, terminal_station, date_s, date_t, price, seat_num};
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
-    return {ism::lltos(total_price), Signal::sig_normal};
+    return {ism::itos(price), Signal::sig_normal};
   } else {
     if(!accept_queue) return {"-1", Signal::sig_normal};
     auto ticket_request_index = ++db_set->info.ticket_request_tot;
     ticket_status_t ticket_status{ticket_status_t::status_t::pending,
       ticket_request_index, train_id, start_date_md, order_s, order_t,
-      start_station, terminal_station, date_s, date_t, total_price, seat_num};
+      start_station, terminal_station, date_s, date_t, price, seat_num};
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
@@ -760,17 +763,19 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
   auto user_index = db_set->user_index_db.list(username)[0];
   auto ticket_status_list = db_set->user_ticket_status_index_db.list(user_index);
   if(ticket_status_list.size() < number) return {"-1", Signal::sig_normal};
-  int pos = ticket_status_list.size() - number;
-  auto ticket_status = db_set->ticket_status_db.list(ticket_status_list[pos])[0];
-  if(ticket_status.status == ticket_status_t::status_t::success) {
-    ticket_status.status = ticket_status_t::status_t::refunded;
-    int date_exact = ticket_status.start_date_md.exact_number();
-    Train::train_id_t train_id = ticket_status.train_id;
+  auto refund_ticket_index = ticket_status_list[ticket_status_list.size() - number];
+  auto refund_ticket_status = db_set->ticket_status_db.list(refund_ticket_index)[0];
+  if(refund_ticket_status.status == ticket_status_t::status_t::success) {
+    db_set->ticket_status_db.erase(refund_ticket_index, refund_ticket_status);
+    refund_ticket_status.status = ticket_status_t::status_t::refunded;
+    db_set->ticket_status_db.insert(refund_ticket_index, refund_ticket_status);
+    int date_exact = refund_ticket_status.start_date_md.exact_number();
+    Train::train_id_t train_id = refund_ticket_status.train_id;
     auto train_index = db_set->train_index_db.list(train_id)[0];
     Train train = db_set->train_db.list(train_index)[0];
     db_set->train_db.erase(train_index, train);
-    for(int i = ticket_status.order_s; i < ticket_status.order_t; ++i)
-      train.unsold_seat_nums[date_exact][i] += ticket_status.amount;
+    for(int i = refund_ticket_status.order_s; i < refund_ticket_status.order_t; ++i)
+      train.unsold_seat_nums[date_exact][i] += refund_ticket_status.amount;
     // refund ended. Try to sell pending tickets.
     auto pending_list = db_set->pending_list_db.list({train_id, date_exact});
     for(int pending_index : pending_list) {
@@ -782,11 +787,11 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
       if(max_seat_num < pending_status.amount) break;
 
       db_set->pending_list_db.erase({train_id, date_exact}, pending_index);
-      db_set->ticket_status_db.erase(ticket_status.request_id, pending_status);
+      db_set->ticket_status_db.erase(pending_index, pending_status);
       for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
         train.unsold_seat_nums[date_exact][i] -= pending_status.amount;
       pending_status.status = ticket_status_t::status_t::success;
-      db_set->ticket_status_db.insert(ticket_status.request_id, pending_status);
+      db_set->ticket_status_db.insert(pending_index, pending_status);
     }
     db_set->train_db.insert(train_index, train);
     return {"0", Signal::sig_normal};

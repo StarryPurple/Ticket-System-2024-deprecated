@@ -1,3 +1,5 @@
 /cmake-build-debug
 /.idea
+/backend/testcase
+/data/*.bash
 *:Zone.Identifier

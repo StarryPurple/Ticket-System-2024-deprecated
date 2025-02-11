@@ -117,7 +117,7 @@ public:
   using station_name_t = ism::utf8_string<10>;
   using seat_num_t = int;
   using price_t = int;
-  using total_price_t = long long;
+  // using total_price_t = long long;
   using time_hm_t = Time_hm;
   using time_dur_t = time_hm_t::time_dur_t;
   using date_md_t = Date_md;
@@ -175,7 +175,7 @@ struct ticket_status_t {
   Train::station_order_t order_s, order_t;
   Train::station_name_t start_station, terminal_station;
   Date date_s, date_t;
-  Train::total_price_t total_price;
+  Train::price_t price;
   Train::seat_num_t amount;
   std::string str() const;
   bool operator==(const ticket_status_t &) const;

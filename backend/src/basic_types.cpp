@@ -9,7 +9,7 @@ Time_hm::Time_hm(int _hour, int _minute): hour(_hour), minute(_minute) {}
 Time_hm::Time_hm(const std::string &str) {
   ism::vector<std::string> time_vec = ism::string_split(str, ':');
   hour = ism::stoi(time_vec[0]);
-  minute = ism::stoi(time_vec[11]);
+  minute = ism::stoi(time_vec[1]);
 }
 
 std::string Time_hm::str() const {
@@ -27,8 +27,8 @@ Time_hm::time_result_t Time_hm::add_minutes(const time_dur_t &n) const {
   if(n < 0) return subtract_minutes(-n);
   int exact = 60 * hour + minute + n;
   time_result_t result;
-  result.days_diff = exact / 3600;
-  exact -= result.days_diff * 3600;
+  result.days_diff = exact / 1440;
+  exact -= result.days_diff * 1440;
   result.time = {exact / 60, exact % 60};
   return result;
 }
@@ -37,10 +37,10 @@ Time_hm::time_result_t Time_hm::subtract_minutes(const time_dur_t &n) const {
   if(n < 0) return add_minutes(-n);
   int exact = 60 * hour + minute - n;
   time_result_t result;
-  result.days_diff = exact / 3600;
-  exact -= result.days_diff * 3600;
+  result.days_diff = exact / 1440;
+  exact -= result.days_diff * 1440;
   if(exact < 0) {
-    exact += 3600;
+    exact += 1440; // 3600?
     --result.days_diff;
   }
   result.time = {exact / 60, exact % 60};
@@ -267,7 +267,7 @@ Train::Train(
     : train_id(_train_id), station_num(_station_num), passenger_capacity(_passenger_capacity), start_time(_start_time),
       sale_date_first(_sale_date_first), sale_date_last(_sale_date_last), train_type(_train_type),
       has_released(false) {
-  for(int i = 0; i < _station_num - 1; ++i) station_names[i] = _station_names[i];
+  for(int i = 0; i < _station_num; ++i) station_names[i] = _station_names[i];
   for(int i = 0; i < k_max_days; ++i)
     for(int j = 0; j < _station_num - 1; ++j)
       unsold_seat_nums[i][j] = passenger_capacity;
@@ -338,7 +338,7 @@ std::string ticket_status_t::str() const {
   res += ' ' + date_s.str();
   res += " -> " + terminal_station.str();
   res += ' ' + date_t.str();
-  res += ' ' + ism::lltos(total_price);
+  res += ' ' + ism::itos(price);
   res += ' ' + ism::itos(amount);
   return res;
 }

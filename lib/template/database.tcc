@@ -37,11 +37,13 @@ database<Key, Value, KeyCompare, ValueCompare>::NodeSelf::NodeSelf(
 template <class Key, class Value, class KeyCompare, class ValueCompare>
 void database<Key, Value, KeyCompare, ValueCompare>::renew(const std::string &filename) {
   _fs.renew(filename);
+  _root = nullptr;
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
 void database<Key, Value, KeyCompare, ValueCompare>::renew() {
   _fs.renew();
+  _root = nullptr;
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
