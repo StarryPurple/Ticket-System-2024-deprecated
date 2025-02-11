@@ -18,7 +18,13 @@ struct Time_hm {
   struct time_result_t;
   time_result_t add_minutes(const time_dur_t &) const;
   time_result_t subtract_minutes(const time_dur_t &) const;
-  std::strong_ordering operator<=>(const Time_hm &) const;
+  time_dur_t operator-(const Time_hm &) const;
+  bool operator==(const Time_hm &) const;
+  bool operator!=(const Time_hm &) const;
+  bool operator<(const Time_hm &) const;
+  bool operator>(const Time_hm &) const;
+  bool operator<=(const Time_hm &) const;
+  bool operator>=(const Time_hm &) const;
   std::string str() const;
 };
 
@@ -29,10 +35,11 @@ struct Time_hm::time_result_t {
 
 // month and date.
 // no leap year considered. February always has 28 days.
+// upd: 06-01 to 08-31 only.
 struct Date_md {
   using date_dur_t = int; // days
   static constexpr int k_month_days[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
+  static constexpr int k_month_days_accum[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
   int month = -1, day = -1;
 
   Date_md() = default;
@@ -41,9 +48,14 @@ struct Date_md {
   Date_md add_days(const date_dur_t &) const;
   Date_md subtract_days(const date_dur_t &) const;
   date_dur_t operator-(const Date_md &) const;
-  std::strong_ordering operator<=>(const Date_md &) const;
+  bool operator==(const Date_md &) const;
+  bool operator!=(const Date_md &) const;
+  bool operator<(const Date_md &) const;
+  bool operator>(const Date_md &) const;
+  bool operator<=(const Date_md &) const;
+  bool operator>=(const Date_md &) const;
   std::string str() const;
-  int exact_number() const;
+  date_dur_t exact_number() const;
 };
 
 struct Date {
@@ -61,7 +73,12 @@ struct Date {
   Date subtract_days(const date_dur_t &) const;
   time_dur_t get_diff_minutes(const Date &) const;
   // ism::pair<date_dur_t, time_dur_t> operator-(const Date &); // result members are both positive or both negative.
-  std::strong_ordering operator<=>(const Date &) const;
+  bool operator==(const Date &) const;
+  bool operator!=(const Date &) const;
+  bool operator<(const Date &) const;
+  bool operator>(const Date &) const;
+  bool operator<=(const Date &) const;
+  bool operator>=(const Date &) const;
   std::string str() const;
 };
 
@@ -112,7 +129,8 @@ public:
   constexpr static time_dur_t k_max_total_travel_time = 43200;
   constexpr static price_t k_max_price = 10000;
   constexpr static int k_max_days = 92;
-
+  constexpr static time_dur_t k_time_inf = 2 * k_max_total_travel_time + 1;
+  constexpr static price_t k_cost_inf = (k_max_station_num - 1) * k_max_price + 1;
   train_id_t train_id;
   station_num_t station_num {};
   station_name_t station_names[k_max_station_num];
@@ -148,10 +166,10 @@ public:
 };
 
 struct ticket_status_t {
-  using ticket_request_t = int;
+  using ticket_request_index_t = int;
   enum class status_t {success, pending, refunded};
   status_t status;
-  ticket_request_t request_id;
+  ticket_request_index_t request_id;
   Train::train_id_t train_id;
   Date_md start_date_md;
   Train::station_order_t order_s, order_t;

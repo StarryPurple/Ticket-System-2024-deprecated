@@ -29,7 +29,10 @@ ConstString<length>::ConstString(const ConstString &other): ConstString() {
 }
 
 template<int length>
-ConstString<length>::ConstString(ConstString &&other): _str(other._str) {}
+ConstString<length>::ConstString(ConstString &&other) {
+  strcpy(_str, other._str);
+  other._str[0] = '\0';
+}
 
 template<int length>
 ConstString<length> &ConstString<length>::operator=(const char *str) {
@@ -112,7 +115,7 @@ std::istream &operator>>(std::istream &is, ConstString<length> &cstr) {
 
 template<int length>
 std::ostream &operator<<(std::ostream &os, ConstString<length> &cstr) {
-  os << cstr.to_str();
+  os << cstr.str();
   return os;
 }
 } // namespace Insomnia

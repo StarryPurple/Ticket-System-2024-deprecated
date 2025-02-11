@@ -23,6 +23,62 @@ std::string Time_hm::str() const {
   return hour_str + ':' + minute_str;
 }
 
+Time_hm::time_result_t Time_hm::add_minutes(const time_dur_t &n) const {
+  if(n < 0) return subtract_minutes(-n);
+  int exact = 60 * hour + minute + n;
+  time_result_t result;
+  result.days_diff = exact / 3600;
+  exact -= result.days_diff * 3600;
+  result.time = {exact / 60, exact % 60};
+  return result;
+}
+
+Time_hm::time_result_t Time_hm::subtract_minutes(const time_dur_t &n) const {
+  if(n < 0) return add_minutes(-n);
+  int exact = 60 * hour + minute - n;
+  time_result_t result;
+  result.days_diff = exact / 3600;
+  exact -= result.days_diff * 3600;
+  if(exact < 0) {
+    exact += 3600;
+    --result.days_diff;
+  }
+  result.time = {exact / 60, exact % 60};
+  return result;
+}
+
+Time_hm::time_dur_t Time_hm::operator-(const Time_hm &other) const {
+  return 60 * (hour - other.hour) + (minute - other.minute);
+}
+
+bool Time_hm::operator==(const Time_hm &other) const {
+  return hour == other.hour && minute == other.minute;
+}
+
+bool Time_hm::operator!=(const Time_hm &other) const {
+  return hour != other.hour || minute != other.minute;
+}
+
+bool Time_hm::operator<(const Time_hm &other) const {
+  if(hour != other.hour) return hour < other.hour;
+  return minute < other.minute;
+}
+
+bool Time_hm::operator>(const Time_hm &other) const {
+  if(hour != other.hour) return hour > other.hour;
+  return minute > other.minute;
+}
+
+bool Time_hm::operator<=(const Time_hm &other) const {
+  if(hour != other.hour) return hour < other.hour;
+  return minute <= other.minute;
+}
+
+bool Time_hm::operator>=(const Time_hm &other) const {
+  if(hour != other.hour) return hour > other.hour;
+  return minute >= other.minute;
+}
+
 // struct Date_md
 
 Date_md::Date_md(int _month, int _day): month(_month), day(_day) {}
@@ -44,6 +100,68 @@ std::string Date_md::str() const {
   return month_str + '-' + day_str;
 }
 
+Date_md Date_md::add_days(const date_dur_t &n) const {
+  if(n < 0) return subtract_days(-n);
+  Date_md result = *this;
+  result.day += n;
+  while(result.day > k_month_days[result.month]) {
+    result.day -= k_month_days[result.month];
+    ++result.month;
+    if(result.month == 13) result.month = 1;
+  }
+  return result;
+}
+
+Date_md Date_md::subtract_days(const date_dur_t &n) const {
+  if(n < 0) return add_days(-n);
+  Date_md result = *this;
+  result.day -= n;
+  while(result.day <= 0) {
+    --result.month;
+    if(result.month == 0) result.month = 12;
+    result.day += k_month_days[result.month];
+  }
+  return result;
+}
+
+Date_md::date_dur_t Date_md::operator-(const Date_md &other) const {
+  return (k_month_days_accum[month] + day) - (k_month_days_accum[other.month] + other.day);
+}
+
+Date_md::date_dur_t Date_md::exact_number() const {
+  if(month == 6) return day;
+  if(month == 7) return k_month_days[6] + day;
+  if(month == 8) return k_month_days[6] + k_month_days[7] + day;
+  throw TicketSystemException("Date out of capable range.");
+}
+
+bool Date_md::operator==(const Date_md &other) const {
+  return month == other.month && day == other.day;
+}
+
+bool Date_md::operator!=(const Date_md &other) const {
+  return month != other.month || day != other.day;
+}
+
+bool Date_md::operator<(const Date_md &other) const {
+  if(month != other.month) return month < other.month;
+  return day < other.day;
+}
+
+bool Date_md::operator>(const Date_md &other) const {
+  if(month != other.month) return month > other.month;
+  return day > other.day;
+}
+
+bool Date_md::operator<=(const Date_md &other) const {
+  if(month != other.month) return month < other.month;
+  return day <= other.day;
+}
+
+bool Date_md::operator>=(const Date_md &other) const {
+  if(month != other.month) return month > other.month;
+  return day >= other.day;
+}
 
 // struct Date
 
@@ -53,6 +171,67 @@ Date::Date(const Date_md &_date_md, const Time_hm &_time_hm)
 std::string Date::str() const {
   return date_md.str() + ' ' + time_hm.str();
 }
+
+Date Date::add_minutes(const time_dur_t &n) const {
+  if(n < 0) return subtract_minutes(-n);
+  auto temp = time_hm.add_minutes(n);
+  return {date_md.add_days(temp.days_diff), temp.time};
+}
+
+Date Date::subtract_minutes(const time_dur_t &n) const {
+  if(n < 0) return add_minutes(-n);
+  Date result = *this;
+  auto temp = time_hm.subtract_minutes(n);
+  return {date_md.add_days(temp.days_diff), temp.time}; // add a negative diff.
+}
+
+Date Date::add_days(const date_dur_t &n) const {
+  if(n < 0) return subtract_days(-n);
+  return {date_md.add_days(n), time_hm};
+}
+
+Date Date::subtract_days(const date_dur_t &n) const {
+  if(n < 0) return add_days(-n);
+  return {date_md.subtract_days(n), time_hm};
+}
+
+Date::time_dur_t Date::get_diff_minutes(const Date &other) const {
+  return 3600 * (date_md - other.date_md) + (time_hm - other.time_hm);
+}
+
+bool Date::operator==(const Date &other) const {
+  return date_md == other.date_md && time_hm == other.time_hm;
+}
+
+bool Date::operator!=(const Date &other) const {
+  return date_md != other.date_md || time_hm != other.time_hm;
+}
+
+bool Date::operator<(const Date &other) const {
+  if(date_md != other.date_md) return date_md < other.date_md;
+  return time_hm < other.time_hm;
+}
+
+bool Date::operator>(const Date &other) const {
+  if(date_md != other.date_md) return date_md > other.date_md;
+  return time_hm > other.time_hm;
+}
+
+bool Date::operator<=(const Date &other) const {
+  if(date_md != other.date_md) return date_md < other.date_md;
+  return time_hm <= other.time_hm;
+}
+
+bool Date::operator>=(const Date &other) const {
+  if(date_md != other.date_md) return date_md > other.date_md;
+  return time_hm >= other.time_hm;
+}
+
+
+
+
+
+
 
 // struct User
 

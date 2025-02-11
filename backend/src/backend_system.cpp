@@ -32,7 +32,7 @@ const BackendSystem::arglist_t BackendSystem::func_default_arglist[k_opr_cnt] = 
   {}                                                                  // exit
 };
 
-// startups / shutdowns
+// startups / shutdowns / basics
 
 BackendSystem::BackendSystem()
   : func_list{
@@ -68,7 +68,7 @@ void BackendSystem::DatabaseSet::renew(const std::string &working_dir) {
   user_index_db.renew(working_dir + "/user_index_db.dat");
   user_ticket_status_index_db.renew(working_dir + "/user_ticket_status_index_db.dat");
   ticket_status_db.renew(working_dir + "/ticket_status_db.dat");
-  pending_ticket_status_ds.renew(working_dir + "/pending_ticket_status_ds.dat");
+  pending_list_db.renew(working_dir + "/pending_ticket_status_ds.dat");
   train_db.renew(working_dir + "/train_db.dat");
   train_index_db.renew(working_dir + "/train_index_db.dat");
   station_db.renew(working_dir + "/station_db.dat");
@@ -83,7 +83,7 @@ void BackendSystem::DatabaseSet::renew() {
   user_db.renew();
   user_ticket_status_index_db.renew();
   ticket_status_db.renew();
-  pending_ticket_status_ds.renew();
+  pending_list_db.renew();
   train_index_db.renew();
   train_db.renew();
   station_db.renew();
@@ -99,13 +99,13 @@ bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   user_index_db.open(working_dir + "/user_index_db.dat");
   user_ticket_status_index_db.open(working_dir + "/user_ticket_status_index_db.dat");
   ticket_status_db.renew(working_dir + "/ticket_status_db.dat");
-  pending_ticket_status_ds.open(working_dir + "/pending_ticket_status_ds.dat");
+  pending_list_db.open(working_dir + "/pending_ticket_status_ds.dat");
   train_db.open(working_dir + "/train_db.dat");
   train_index_db.open(working_dir + "/train_index_db.dat");
   station_db.open(working_dir + "/station_db.dat");
   info_rec.open(working_dir + "/info_rec.dat");
   if(user_db.is_open() && user_index_db.is_open()
-    && user_ticket_status_index_db.is_open() && pending_ticket_status_ds.is_open()
+    && user_ticket_status_index_db.is_open() && pending_list_db.is_open()
     && train_db.is_open() && train_index_db.is_open()
     && station_db.is_open() && info_rec.is_open()) {
     info_rec.read_info(info);
@@ -115,7 +115,7 @@ bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   user_index_db.close();
   user_ticket_status_index_db.close();
   ticket_status_db.close();
-  pending_ticket_status_ds.close();
+  pending_list_db.close();
   train_db.close();
   train_index_db.close();
   station_db.close();
@@ -134,7 +134,7 @@ void BackendSystem::DatabaseSet::close() {
   user_index_db.close();
   user_ticket_status_index_db.close();
   ticket_status_db.close();
-  pending_ticket_status_ds.close();
+  pending_list_db.close();
   train_db.close();
   train_index_db.close();
   station_db.close();
@@ -148,6 +148,37 @@ BackendSystem::DatabaseSet::~DatabaseSet() {
 BackendSystem::DatabaseSet::station_info_t::station_info_t(
   const Train::train_id_t &_train_id, const station_order_t &_order)
   : train_id(_train_id), order(_order) {}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator==(const station_info_t &other) const {
+  return train_id == other.train_id && order == other.order;
+}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator!=(const station_info_t &other) const {
+  return train_id != other.train_id || order != other.order;
+}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator<(const station_info_t &other) const {
+  if(train_id != other.train_id) return train_id < other.train_id;
+  return order < other.order;
+}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator>(const station_info_t &other) const {
+  if(train_id != other.train_id) return train_id > other.train_id;
+  return order > other.order;
+}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator<=(const station_info_t &other) const {
+  if(train_id != other.train_id) return train_id < other.train_id;
+  return order <= other.order;
+}
+
+bool BackendSystem::DatabaseSet::station_info_t::operator>=(const station_info_t &other) const {
+  if(train_id != other.train_id) return train_id > other.train_id;
+  return order >= other.order;
+}
+
+
+
 
 
 void BackendSystem::UserManager::startup(DatabaseSet &_db_set) {
@@ -497,16 +528,13 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
   Date_md date_md_mid1 = args.at('d');
   std::string sort_type = args.at('p');
 
-  Train::time_dur_t time_inf = 2 * Train::k_max_total_travel_time + 1; // inf
-  Train::price_t cost_inf = (Train::k_max_station_num - 1) * Train::k_max_price + 1; // inf
-
   struct Info {
     Train train1, train2;
     Train::station_order_t order1s, order1t, order2s, order2t;
     Date date1s, date1t, date2s, date2t;
     int date_exact1, date_exact2;
-    Train::time_dur_t time = time_inf;
-    Train::price_t cost = cost_inf;
+    Train::time_dur_t time = Train::k_time_inf;
+    Train::price_t cost = Train::k_cost_inf;
     std::string str() const {
       std::string res;
       res += train1.train_id.str() + ' ' + train1.station_names[order1s].str() + ' ';
@@ -630,7 +658,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
     j_start = j_start + 1;
   }
 
-  if(info.time == time_inf && info.cost == cost_inf) return {"0", Signal::sig_normal};
+  if(info.time == Train::k_time_inf && info.cost == Train::k_cost_inf) return {"0", Signal::sig_normal};
   return {info.str(), Signal::sig_normal};
 }
 
@@ -694,7 +722,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
-    db_set->pending_ticket_status_ds.insert(ticket_request_index);
+    db_set->pending_list_db.insert({train_id, start_date_md.exact_number()}, ticket_request_index);
     return {"queue", Signal::sig_normal};
   }
 }
@@ -724,8 +752,32 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
   int pos = ticket_status_list.size() - number;
   auto ticket_status = db_set->ticket_status_db.list(ticket_status_list[pos])[0];
   if(ticket_status.status == ticket_status_t::status_t::success) {
+    ticket_status.status = ticket_status_t::status_t::refunded;
+    int date_exact = ticket_status.start_date_md.exact_number();
+    Train::train_id_t train_id = ticket_status.train_id;
+    auto train_index = db_set->train_index_db.list(train_id)[0];
+    Train train = db_set->train_db.list(train_index)[0];
+    db_set->train_db.erase(train_index, train);
+    for(int i = ticket_status.order_s; i < ticket_status.order_t; ++i)
+      train.unsold_seat_nums[date_exact][i] += ticket_status.amount;
+    // refund ended. Try to sell pending tickets.
+    auto pending_list = db_set->pending_list_db.list({train_id, date_exact});
+    for(int pending_index : pending_list) {
+      auto pending_status = db_set->ticket_status_db.list(pending_index)[0];
+      int max_seat_num = Train::k_max_seat_num + 1;
+      for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
+        if(max_seat_num > train.unsold_seat_nums[date_exact][i])
+          max_seat_num = train.unsold_seat_nums[date_exact][i];
+      if(max_seat_num < pending_status.amount) break;
 
-
+      db_set->pending_list_db.erase({train_id, date_exact}, pending_index);
+      db_set->ticket_status_db.erase(ticket_status.request_id, pending_status);
+      for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
+        train.unsold_seat_nums[date_exact][i] -= pending_status.amount;
+      pending_status.status = ticket_status_t::status_t::success;
+      db_set->ticket_status_db.insert(ticket_status.request_id, pending_status);
+    }
+    db_set->train_db.insert(train_index, train);
     return {"0", Signal::sig_normal};
   } else return {"-1", Signal::sig_normal};
 }

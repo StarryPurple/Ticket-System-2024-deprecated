@@ -20,9 +20,9 @@ RAIt partition(RAIt begin, RAIt end, Compare comp) {
 template<class RAIt, class Compare>
 void sort(RAIt begin, RAIt end, const Compare &comp) {
   if(begin == end) return;
-  auto pivot_it = partition(begin, end, comp);
-  sort(begin, pivot_it, comp);
-  sort(pivot_it + 1, end, comp);
+  auto pivot_it = Insomnia::partition(begin, end, comp);
+  Insomnia::sort(begin, pivot_it, comp);
+  Insomnia::sort(pivot_it + 1, end, comp);
 }
 
 }

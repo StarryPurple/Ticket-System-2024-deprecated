@@ -4,7 +4,7 @@
 #include "vector.h"
 
 namespace Insomnia {
-
+/*
 // class vector::iterator
 
 template<class Tp, class Alloc>
@@ -490,7 +490,7 @@ void vector<Tp, Alloc>::pop_back() {
 	--_size;
 	_data[_size].~T();
 }
-
+*/
 } // namespace Insomnia
 
 #endif // INSOMNIA_VECTOR_TCC
