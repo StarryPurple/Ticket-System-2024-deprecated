@@ -30,7 +30,8 @@ private:
   struct Command {
     using timestamp_t = int;
     using cmd_name_t = std::string;
-    timestamp_t timestamp;
+    static constexpr timestamp_t n_timestamp = -1;
+    timestamp_t timestamp = n_timestamp;
     cmd_name_t cmd_name;
     raw_arglist_t arglist;
   };
@@ -77,7 +78,6 @@ private:
     bool open(const std::string &working_dir);
     bool is_open() const;
     void close();
-    ReturnInfo clean(const arglist_t &args);
   };
 
   // for operations which needs the active-user list.
@@ -118,6 +118,7 @@ private:
   UserManager _user_mgr {};
   TrainManager _train_mgr {};
 
+  ReturnInfo clean(const arglist_t &args);
   static ReturnInfo exit(const arglist_t &args);
 
   static constexpr int k_opr_cnt = 16;

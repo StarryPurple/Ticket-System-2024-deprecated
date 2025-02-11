@@ -98,7 +98,7 @@ bool BackendSystem::DatabaseSet::open(const std::string &working_dir) {
   user_db.open(working_dir + "/user_db.dat");
   user_index_db.open(working_dir + "/user_index_db.dat");
   user_ticket_status_index_db.open(working_dir + "/user_ticket_status_index_db.dat");
-  ticket_status_db.renew(working_dir + "/ticket_status_db.dat");
+  ticket_status_db.open(working_dir + "/ticket_status_db.dat");
   pending_list_db.open(working_dir + "/pending_ticket_status_ds.dat");
   train_db.open(working_dir + "/train_db.dat");
   train_index_db.open(working_dir + "/train_index_db.dat");
@@ -240,9 +240,13 @@ BackendSystem::Command BackendSystem::read_command(const std::string &command) {
   }
   if(!arg.empty()) argv.push_back(arg);
   Command cmd;
+  if(argv.empty()) return cmd;
+  argv[0].pop_back();
+  argv[0].erase(argv[0].begin());
   cmd.timestamp = ism::stoi(argv[0]);
+  if(argv.size() == 1) return cmd;
   cmd.cmd_name = argv[1];
-  for(int i = 2; i < arg.length(); i += 2)
+  for(int i = 2; i < argv.size(); i += 2)
     cmd.arglist.push_back(CommandPair{argv[i][1], argv[i + 1]});
   return cmd;
 }
@@ -254,13 +258,20 @@ void BackendSystem::sort_arglist(const raw_arglist_t &arglist, arglist_t &sorted
 
 BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
   ReturnInfo result;
+  bool is_valid = false;
   for(int i = 0; i < k_opr_cnt; ++i)
     if(command.cmd_name == func_name_list[i]) {
       arglist_t sorted_arglist = func_default_arglist[i];
       sort_arglist(command.arglist, sorted_arglist);
       result = func_list[i](sorted_arglist);
+      is_valid = true;
       break;
     }
+  if(!is_valid) {
+    if(command.timestamp == Command::n_timestamp && !command.cmd_name.empty())
+      std::cout << '[' << command.timestamp << ']' << " Command \'" + command.cmd_name << "\' not found." << std::endl;
+    return Signal::sig_normal;
+  }
   std::cout << '[' << command.timestamp << ']' << ' ' << result.info << std::endl;
   return result.signal;
   /*
@@ -782,9 +793,10 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
   } else return {"-1", Signal::sig_normal};
 }
 
-BackendSystem::ReturnInfo BackendSystem::DatabaseSet::clean(const arglist_t &args) {
+BackendSystem::ReturnInfo BackendSystem::clean(const arglist_t &args) {
   // {}
-  renew();
+  _db_set.renew();
+  _user_mgr.active_users.clear();
   return {"0", Signal::sig_normal};
 }
 

@@ -83,13 +83,14 @@ void test_database() {
 }
 
 void test_ticket_system_interface() {
+  // std::cerr << "Debug here" << std::endl;
+  ism::stoi("-0"); // ?
   std::filesystem::path current_dir = std::filesystem::current_path();
   std::filesystem::path data_dir = current_dir.parent_path() / "data";
 
   TicketSystem::InterfaceSystem interface_system;
   // interface_system.interface(current_dir.string());
   interface_system.interface(data_dir.string());
-  ism::stoi("1"); // ?
 }
 
 int main() {

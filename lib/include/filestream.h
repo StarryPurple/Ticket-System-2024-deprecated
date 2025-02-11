@@ -15,7 +15,7 @@ class fs_constant {
   friend class fspointer;
   template<class Tp, class Info>
   friend class filestream;
-  static constexpr int k_stat_bytes_count = 1 << 18;
+  static constexpr int k_stat_bytes_count = 1 << 15;
   static constexpr int k_stat_count = k_stat_bytes_count << 5;
 };
 
