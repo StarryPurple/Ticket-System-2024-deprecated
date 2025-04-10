@@ -1,7 +1,7 @@
 #ifndef INSOMNIA_INFO_RECORDER_H
 #define INSOMNIA_INFO_RECORDER_H
 
-namespace Insomnia {
+namespace insomnia {
 
 template<class Info>
 class info_recorder {
@@ -18,7 +18,7 @@ public:
   bool is_open() const;
 };
 
-} // namespace Insomnia
+}
 
 #include "info_recorder.tcc"
 

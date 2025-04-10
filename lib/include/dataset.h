@@ -3,13 +3,13 @@
 
 #include "database.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 template<class Tp, class Compare = std::less<Tp>>
 class dataset {
 private:
   using placeholder_t = int;
-  database<placeholder_t, Tp, std::less<placeholder_t>, Compare> _db;
+  bplustree<placeholder_t, Tp, std::less<placeholder_t>, Compare> _db;
   static constexpr placeholder_t placeholder = 0;
 public:
   dataset() = default;
@@ -41,7 +41,7 @@ public:
   bool empty() const;
 };
 
-} // namespace Insomnia
+}
 
 #include "dataset.tcc"
 

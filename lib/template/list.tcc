@@ -3,8 +3,8 @@
 
 #include "list.h"
 
-namespace Insomnia {
+namespace insomnia {
 
-} // namespace Insomnia
+}
 
 #endif // INSOMNIA_LIST_TCC

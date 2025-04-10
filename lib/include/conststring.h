@@ -6,7 +6,7 @@
 #include <iostream>
 #include <cstring>
 
-namespace Insomnia{
+namespace insomnia{
 
 /* A length-fixed string type which acts like "const char [length]".
  * Supports ASCII characters (CharT = char) and UTF-8 characters (CharT = wchar_t).
@@ -54,7 +54,7 @@ using ascii_string = ConstString<length>;
 template<int length>
 using utf8_string = ConstString<length * 4>;
 
-} // namespace Insomnia
+}
 
 #include "conststring.tcc"
 

@@ -1,6 +1,6 @@
 #include "filestream.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 // class fspointer
 
@@ -33,4 +33,4 @@ fspointer &fspointer::operator=(const nullptr_t &) {
 bool operator==(const nullptr_t &, const fspointer &ptr) {return ptr._pos == fspointer::k_stat_count;}
 bool operator!=(const nullptr_t &, const fspointer &ptr) {return ptr._pos != fspointer::k_stat_count;}
 
-} // namespace Insomnia
+}

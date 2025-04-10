@@ -1,6 +1,6 @@
 #include "lib_exceptions.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 // class FileSystemException
 
@@ -47,4 +47,4 @@ container_is_empty::container_is_empty(const std::string &detail): ContainerExce
 const char *container_is_empty::what() const noexcept {return _detail;}
 // class invalid_iterator
 
-} // namespace Insomnia
+}

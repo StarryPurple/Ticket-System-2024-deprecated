@@ -3,7 +3,7 @@
 
 #include "conststring.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 // class ConstString
 
@@ -118,7 +118,7 @@ std::ostream &operator<<(std::ostream &os, ConstString<length> &cstr) {
   os << cstr.str();
   return os;
 }
-} // namespace Insomnia
+}
 
 
 #endif // CONSTSTRING_TCC

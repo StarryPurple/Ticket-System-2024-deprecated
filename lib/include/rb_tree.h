@@ -3,27 +3,27 @@
 
 #include "pair.h"
 
-namespace Insomnia {
+namespace insomnia {
 
-template<class Key, class Value, class KeyofValue = std::identity, class KeyCompare = std::less<Key>>
+template<class Key, class Value, class KeyofValue, class KeyCompare = std::less<Key>>
 class rb_tree {
-  using kv_type = pair<const Key, Value>;
+public:
+  using value_type = pair<const Key, Value>;
+  using size_type = size_t;
+
 private:
   enum class node_color {Red, Black};
   struct node_base {
     node_base *left, *right, *parent;
   };
-  struct header_node: node_base {
-    size_t size; // size of the tree.
-  };
   struct tree_node: node_base {
-    kv_type kv;
+    value_type kv;
     node_color color;
 
-    node_base* get_prev() const;
-    node_base* get_next() const;
-    void left_rotate();
-    void right_rotate();
+    tree_node* get_prev() const;
+    tree_node* get_next() const;
+    tree_node* left_rotate();
+    tree_node* right_rotate();
   };
   class iterator_base {
     const rb_tree<Key, Value, KeyofValue, KeyCompare> *_container;
@@ -32,7 +32,8 @@ private:
     void decrease();
   };
 
-  header_node _header;
+  node_base *_header;
+  size_type _size;
   KeyofValue _get_key_of_value;
   KeyCompare _key_comparer;
 
@@ -85,8 +86,8 @@ public:
   const_iterator cbegin() const;
   const_iterator cend() const;
 
-  pair<iterator, bool> insert_unique(const kv_type &kv); // terminate if key already exists.
-  pair<iterator, bool> insert_equal(const kv_type &kv); // 
+  pair<iterator, bool> insert_unique(const value_type &kv); // terminate if key already exists.
+  pair<iterator, bool> insert_equal(const value_type &kv); //
   iterator lower_bound(const Key &key);
   const_iterator lower_bound(const Key &key) const;
   iterator upper_bound(const Key &key);
@@ -100,7 +101,7 @@ public:
   void clear();
 };
 
-} // namespace Insomnia
+}
 
 #include "rb_tree.tcc"
 

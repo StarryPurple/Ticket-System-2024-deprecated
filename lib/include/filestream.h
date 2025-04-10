@@ -5,7 +5,7 @@
 #include <filesystem>
 
 #include "lib_exceptions.h"
-namespace Insomnia {
+namespace insomnia {
 
 class fspointer;
 template<class Tp, class Info>

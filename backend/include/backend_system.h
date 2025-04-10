@@ -41,15 +41,15 @@ private:
     bool is_all_open = false;
   public:
     using user_index_t = int;
-    ism::database<user_index_t, User> user_db;
-    ism::database<User::username_t, user_index_t> user_index_db;
-    ism::database<user_index_t, ticket_status_t::ticket_request_index_t> user_ticket_status_index_db;
+    ism::bplustree<user_index_t, User> user_db;
+    ism::bplustree<User::username_t, user_index_t> user_index_db;
+    ism::bplustree<user_index_t, ticket_status_t::ticket_request_index_t> user_ticket_status_index_db;
     using ticket_request_index_t = ticket_status_t::ticket_request_index_t;
-    ism::database<ticket_status_t::ticket_request_index_t, ticket_status_t> ticket_status_db;
-    ism::database<ism::pair<Train::train_id_t, Train::date_dur_t>, ticket_status_t::ticket_request_index_t> pending_list_db;
+    ism::bplustree<ticket_status_t::ticket_request_index_t, ticket_status_t> ticket_status_db;
+    ism::bplustree<ism::pair<Train::train_id_t, Train::date_dur_t>, ticket_status_t::ticket_request_index_t> pending_list_db;
     using train_index_t = int;
-    ism::database<train_index_t, Train> train_db;
-    ism::database<Train::train_id_t, train_index_t> train_index_db;
+    ism::bplustree<train_index_t, Train> train_db;
+    ism::bplustree<Train::train_id_t, train_index_t> train_index_db;
     struct station_info_t {
       using station_order_t = Train::station_order_t; // the order number that this station is on the route of the train
       Train::train_id_t train_id;
@@ -63,7 +63,7 @@ private:
       bool operator<=(const station_info_t &) const;
       bool operator>=(const station_info_t &) const;
     };
-    ism::database<Train::station_name_t, station_info_t> station_db;
+    ism::bplustree<Train::station_name_t, station_info_t> station_db;
     struct info_t {
       user_index_t user_index_tot;
       train_index_t train_index_tot;

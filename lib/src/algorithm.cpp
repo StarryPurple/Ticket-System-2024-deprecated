@@ -1,6 +1,6 @@
 #include "algorithm.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 int stoi(const std::string &str) {
   if(str.empty()) return 0;
@@ -60,4 +60,4 @@ vector<std::string> string_split(const std::string &str, const char separator) {
 }
 
 
-} // namespace Insomnia
+}

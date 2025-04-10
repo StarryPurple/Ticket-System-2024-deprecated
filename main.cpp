@@ -11,8 +11,8 @@ void test_filestream() {
   std::filesystem::path data_dir = working_dir / "data";
   std::filesystem::path data_file = data_dir / "filestream_test.txt";
 
-  using name_t = Insomnia::utf8_string<4>;
-  Insomnia::filestream<name_t, int> fs;
+  using name_t = insomnia::utf8_string<4>;
+  insomnia::filestream<name_t, int> fs;
   // fs.renew(data_file.string());
   fs.open(data_file.string());
   if(!fs.is_open()) {
@@ -38,7 +38,7 @@ void test_filestream() {
   fs.dealloc(ptrB);
   try {
     fs.read(ptrB, name);
-  } catch(Insomnia::FileSystemException &ex) {
+  } catch(insomnia::FileSystemException &ex) {
     std::cout << "File system error: " << ex.what() << std::endl;
   }
   std::cout << fs.occupancy_number() << std::endl;
@@ -47,8 +47,8 @@ void test_filestream() {
 void test_database() {
   std::string path = "database_test.txt";
 
-  using index_t = Insomnia::ascii_string<64>;
-  Insomnia::database<index_t, int> db;
+  using index_t = insomnia::ascii_string<64>;
+  insomnia::bplustree<index_t, int> db;
   // db.renew(path);
   db.open(path);
   if(!db.is_open()) {
@@ -90,8 +90,8 @@ void test_ticket_system_interface() {
 
   TicketSystem::InterfaceSystem interface_system;
   // interface_system.interface(current_dir.string());
-  // interface_system.interface(data_dir.string());
-  interface_system.interface(".");
+   interface_system.interface(data_dir.string());
+  // interface_system.interface(".");
 }
 
 int main() {

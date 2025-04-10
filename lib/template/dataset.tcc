@@ -1,7 +1,7 @@
 #ifndef INSOMNIA_DATASET_TCC
 #define INSOMNIA_DATASET_TCC
 
-namespace Insomnia {
+namespace insomnia {
 
 template <class Tp, class Compare>
 dataset<Tp, Compare>::~dataset() {
@@ -63,6 +63,6 @@ bool dataset<Tp, Compare>::empty() const {
   return _db.empty();
 }
 
-} // namespace Insomnia
+}
 
 #endif // INSOMNIA_DATASET_TCC

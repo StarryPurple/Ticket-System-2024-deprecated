@@ -5,12 +5,12 @@
 
 #include <map>
 
-namespace Insomnia {
+namespace insomnia {
 
 template<class Key, class Value, class KeyCompare = std::less<Key>>
 using map = std::map<Key, Value, KeyCompare>;
 
-} // namespace Insomnia
+}
 
 
 

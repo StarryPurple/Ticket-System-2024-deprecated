@@ -3,7 +3,7 @@
 
 #include "algorithm.h"
 
-namespace Insomnia {
+namespace insomnia {
 template<class RAIt, class Compare>
 RAIt partition(RAIt begin, RAIt end, Compare comp) {
   auto pivot = *(end - 1);
@@ -20,9 +20,9 @@ RAIt partition(RAIt begin, RAIt end, Compare comp) {
 template<class RAIt, class Compare>
 void sort(RAIt begin, RAIt end, const Compare &comp) {
   if(begin == end) return;
-  auto pivot_it = Insomnia::partition(begin, end, comp);
-  Insomnia::sort(begin, pivot_it, comp);
-  Insomnia::sort(pivot_it + 1, end, comp);
+  auto pivot_it = insomnia::partition(begin, end, comp);
+  insomnia::sort(begin, pivot_it, comp);
+  insomnia::sort(pivot_it + 1, end, comp);
 }
 
 }

@@ -3,7 +3,7 @@
 
 #include "info_recorder.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 template <class Info>
 info_recorder<Info>::~info_recorder() {
@@ -72,7 +72,7 @@ bool info_recorder<Info>::is_open() const {
   return _fstream.is_open();
 }
 
-} // namespace Insomnia
+}
 
 
 #endif // INSOMNIA_INFO_RECORDER_TCC

@@ -3,7 +3,7 @@
 
 #include "filestream.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 // class filestream
 
@@ -203,7 +203,7 @@ bool filestream<Tp, Info>::empty() const {
 }
 
 
-} // namespace Insomnia
+}
 
 
 #endif // INSOMNIA_FILESTREAM_TCC

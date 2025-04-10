@@ -13,6 +13,6 @@
 #include "dataset.h"
 #include "info_recorder.h"
 
-namespace ism = Insomnia;
+namespace ism = insomnia;
 
 #endif // TICKET_SYSTEM_CONFIG_H

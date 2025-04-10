@@ -6,7 +6,7 @@
 #include <iterator>
 #include <functional>
 
-namespace Insomnia {
+namespace insomnia {
 
 // RAIt for random access iterator.
 // only a quicksort.

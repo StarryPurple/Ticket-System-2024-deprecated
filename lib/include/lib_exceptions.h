@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-namespace Insomnia {
+namespace insomnia {
 
 class FileSystemException final : std::exception {
 protected:
@@ -49,7 +49,7 @@ public:
   const char *what() const noexcept override final;
 };
 
-} // namespace Insomnia
+}
 
 
 #endif // INSOMNIA_CONTAINERS_EXCEPTIONS_H

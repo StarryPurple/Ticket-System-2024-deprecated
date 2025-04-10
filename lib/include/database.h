@@ -4,13 +4,13 @@
 #include "filestream.h"
 #include "pair.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 /** @brief A B+Tree based in-file database manager.
  *  Supports in-file operations like in-memory std::multimap.
  */
 template<class Key, class Value, class KeyCompare = std::less<Key>, class ValueCompare = std::less<Value>>
-class database {
+class bplustree {
   static_assert(std::is_default_constructible_v<Key> && std::is_default_constructible_v<Value>,
     "KeyType and ValueType is required to be default constructible in Insomnia::database");
   using Nodeptr = fspointer;
@@ -62,13 +62,13 @@ private:
   void erasure_maintain(NodeSelf &node_self);
 
 public:
-  database() = default;
-  ~database();
+  bplustree() = default;
+  ~bplustree();
 
-  database(const database &) = delete;
-  database(database &&) = delete;
-  database& operator=(const database &) = delete;
-  database& operator=(database &&) = delete;
+  bplustree(const bplustree &) = delete;
+  bplustree(bplustree &&) = delete;
+  bplustree& operator=(const bplustree &) = delete;
+  bplustree& operator=(bplustree &&) = delete;
 
   // is_open() == false required.
   void renew(const std::string &filename);

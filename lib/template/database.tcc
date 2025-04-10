@@ -6,16 +6,16 @@
 
 #include "database.h"
 
-namespace Insomnia {
+namespace insomnia {
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-database<Key, Value, KeyCompare, ValueCompare>::kv_type::kv_type(
+bplustree<Key, Value, KeyCompare, ValueCompare>::kv_type::kv_type(
   const Key &the_key, const Value &the_value)
     : key(the_key), value(the_value) {}
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::kv_comparer(
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::kv_comparer(
   const kv_type &lhs, const kv_type &rhs) const {
   if(_key_comparer(lhs.key, rhs.key)) return true;
   if(_key_comparer(rhs.key, lhs.key)) return false;
@@ -23,31 +23,31 @@ bool database<Key, Value, KeyCompare, ValueCompare>::kv_comparer(
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-typename database<Key, Value, KeyCompare, ValueCompare>::kv_type&
-  database<Key, Value, KeyCompare, ValueCompare>::Node::highkv() {
+typename bplustree<Key, Value, KeyCompare, ValueCompare>::kv_type&
+  bplustree<Key, Value, KeyCompare, ValueCompare>::Node::highkv() {
   return kv[size - 1];
 }
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-database<Key, Value, KeyCompare, ValueCompare>::NodeSelf::NodeSelf(
+bplustree<Key, Value, KeyCompare, ValueCompare>::NodeSelf::NodeSelf(
   const Nodeptr &the_ptr, const Node &the_node)
     : ptr(the_ptr), node(the_node) {}
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::renew(const std::string &filename) {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::renew(const std::string &filename) {
   _fs.renew(filename);
   _root = nullptr;
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::renew() {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::renew() {
   _fs.renew();
   _root = nullptr;
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::open(const std::string &filename) {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::open(const std::string &filename) {
   if(is_open())
     throw FileSystemException("database is open");
   _fs.open(filename);
@@ -56,42 +56,42 @@ void database<Key, Value, KeyCompare, ValueCompare>::open(const std::string &fil
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::close() {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::close() {
   if(!is_open()) return;
   _fs.write_info(_root);
   _fs.close();
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::is_open() const {
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::is_open() const {
   return _fs.is_open();
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-database<Key, Value, KeyCompare, ValueCompare>::~database() {
+bplustree<Key, Value, KeyCompare, ValueCompare>::~bplustree() {
   close();
 }
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-size_t database<Key, Value, KeyCompare, ValueCompare>::occupancy_number() const {
+size_t bplustree<Key, Value, KeyCompare, ValueCompare>::occupancy_number() const {
   return _fs.occupancy_number();
 }
 
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-double database<Key, Value, KeyCompare, ValueCompare>::occupancy_rate() const {
+double bplustree<Key, Value, KeyCompare, ValueCompare>::occupancy_rate() const {
   return _fs.occupancy_rate();
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::empty() const {
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::empty() const {
   return _fs.empty();
 }
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::is_key_equal(
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::is_key_equal(
   const Key &lhs, const Key &rhs) const {
   // return !(_key_comparer(lhs, rhs) || _key_comparer(lhs, rhs));
   return lhs == rhs;
@@ -99,7 +99,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::is_key_equal(
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::is_kv_equal(
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::is_kv_equal(
   const kv_type &lhs, const kv_type &rhs) const {
   // return !(_kv_comparer(lhs, rhs) || _kv_comparer(rhs, lhs));
   return lhs.key == rhs.key && lhs.value == rhs.value;
@@ -107,8 +107,8 @@ bool database<Key, Value, KeyCompare, ValueCompare>::is_kv_equal(
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-typename database<Key, Value, KeyCompare, ValueCompare>::NodeSelf
-  database<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const kv_type &kv) {
+typename bplustree<Key, Value, KeyCompare, ValueCompare>::NodeSelf
+  bplustree<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const kv_type &kv) {
   // remember to maintain parent ptr.
   Nodeptr cur_ptr = _root;
   Node cur_node;
@@ -148,8 +148,8 @@ typename database<Key, Value, KeyCompare, ValueCompare>::NodeSelf
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-typename database<Key, Value, KeyCompare, ValueCompare>::NodeSelf
-database<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const Key &key) {
+typename bplustree<Key, Value, KeyCompare, ValueCompare>::NodeSelf
+bplustree<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const Key &key) {
   // remember to maintain parent ptr.
   // assert(_root != nullptr);
   Nodeptr cur_ptr = _root;
@@ -190,7 +190,7 @@ database<Key, Value, KeyCompare, ValueCompare>::navigate_to_leaf(const Key &key)
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::average_from_left(
+void bplustree<Key, Value, KeyCompare, ValueCompare>::average_from_left(
   NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) {
   int left_size = (left_self.node.size + right_self.node.size) / 2;
   int right_size = (left_self.node.size + right_self.node.size) - left_size;
@@ -214,7 +214,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::average_from_left(
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::average_from_right(
+void bplustree<Key, Value, KeyCompare, ValueCompare>::average_from_right(
 NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) {
   int left_size = (left_self.node.size + right_self.node.size) / 2;
   int right_size = (left_self.node.size + right_self.node.size) - left_size;
@@ -239,7 +239,7 @@ NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) 
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::split(
+void bplustree<Key, Value, KeyCompare, ValueCompare>::split(
   NodeSelf &parent_self, NodeSelf &node_self, int pos) {
   NodeSelf right_self;
   int left_size = node_self.node.size / 2, right_size = node_self.node.size - left_size;
@@ -276,7 +276,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::split(
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::insertion_maintain(NodeSelf &node_self) {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::insertion_maintain(NodeSelf &node_self) {
   // remember to maintain the highkv.
   if(node_self.ptr == _root) {
     if(node_self.node.size <= k_node_size_max) return;
@@ -318,7 +318,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::insertion_maintain(NodeSelf
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::merge(
+void bplustree<Key, Value, KeyCompare, ValueCompare>::merge(
   NodeSelf &parent_self, NodeSelf &left_self, NodeSelf &right_self, int left_pos) {
   for(int i = 0; i < right_self.node.size; ++i) {
     left_self.node.child[left_self.node.size + i] = right_self.node.child[i];
@@ -346,7 +346,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::merge(
 
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &node_self) {
+void bplustree<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &node_self) {
   // remember to maintain highkv.
   if(node_self.ptr == _root) {
     if(node_self.node.size == 1 && node_self.node.child[0] != nullptr) {
@@ -413,7 +413,7 @@ void database<Key, Value, KeyCompare, ValueCompare>::erasure_maintain(NodeSelf &
 }
 
 template<class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, const Value &value) {
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, const Value &value) {
   kv_type kv{key, value};
   if(empty()) {
     Node root;
@@ -447,7 +447,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::insert(const Key &key, cons
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-bool database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const Value &value) {
+bool bplustree<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const Value &value) {
   if(empty()) return false;
   kv_type kv{key, value};
   NodeSelf node_self = navigate_to_leaf(kv);
@@ -469,7 +469,7 @@ bool database<Key, Value, KeyCompare, ValueCompare>::erase(const Key &key, const
 }
 
 template <class Key, class Value, class KeyCompare, class ValueCompare>
-vector<Value> database<Key, Value, KeyCompare, ValueCompare>::list(const Key &key) {
+vector<Value> bplustree<Key, Value, KeyCompare, ValueCompare>::list(const Key &key) {
   vector<Value> res;
   if(empty()) return res;
   NodeSelf node_self = navigate_to_leaf(key);
@@ -494,7 +494,7 @@ vector<Value> database<Key, Value, KeyCompare, ValueCompare>::list(const Key &ke
   }
 }
 
-} // namespace Insomnia
+}
 
 
 #endif // INSOMNIA_DATABASE_TCC

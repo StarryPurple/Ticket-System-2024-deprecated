@@ -45,7 +45,7 @@ public:
   bool empty() const;
 };
 */
-} // namespace Insomnia
+}
 
 #include "list.tcc"
 

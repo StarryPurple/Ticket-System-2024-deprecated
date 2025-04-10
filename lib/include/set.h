@@ -5,12 +5,12 @@
 
 #include <set>
 
-namespace Insomnia {
+namespace insomnia {
 
 template<class Tp, class Compare = std::less<Tp>>
 using set = std::set<Tp, Compare>;
 
-} // namespace Insomnia
+}
 
 
 #include "set.tcc"
