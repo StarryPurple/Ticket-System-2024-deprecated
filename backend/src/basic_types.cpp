@@ -125,7 +125,7 @@ Date_md Date_md::subtract_days(const date_dur_t &n) const {
 }
 
 Date_md::date_dur_t Date_md::operator-(const Date_md &other) const {
-  return (k_month_days_accum[month] + day) - (k_month_days_accum[other.month] + other.day);
+  return (k_month_days_accum[month - 1] + day) - (k_month_days_accum[other.month - 1] + other.day);
 }
 
 Date_md::date_dur_t Date_md::exact_number() const {

@@ -95,16 +95,16 @@ void test_ticket_system_interface() {
 }
 
 void debug() {
-  freopen("../testcases/basic_2/2.in", "r", stdin);
-  freopen("../testcases/basic_2/2.ism", "w", stdout);
+  freopen("../testcases/basic_3/7.in", "r", stdin);
+  freopen("../testcases/basic_3/7.ism", "w", stdout);
   test_ticket_system_interface();
-  std::system("diff -bB ../testcases/basic_2/2.ism ../testcases/basic_2/2.out");
+  std::system("diff -bB ../testcases/basic_3/7.ism ../testcases/basic_3/7.out");
   fclose(stdin); fclose(stdout);
 }
 
 int main() {
   // test_database();
-  // test_ticket_system_interface();
-  debug();
+  test_ticket_system_interface();
+  // debug();
   return 0;
 }
