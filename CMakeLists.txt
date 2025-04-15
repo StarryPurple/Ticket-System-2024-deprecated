@@ -18,5 +18,9 @@ add_executable(
     main.cpp
 )
 
-
 target_link_libraries(code PRIVATE ${lib_targets} ${backend_targets})
+
+add_executable(
+    tester
+    testcases/tester.cpp
+)

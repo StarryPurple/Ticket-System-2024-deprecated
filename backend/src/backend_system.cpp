@@ -355,7 +355,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::query_profile(const arglis
   if(index_list.empty()) return {"-1", Signal::sig_normal};
   User cur_user = db_set->user_db.list(db_set->user_index_db.list(cur_username)[0])[0];
   User user = db_set->user_db.list(index_list[0])[0];
-  if(cur_user.privilege < user.privilege) return {"-1", Signal::sig_normal};
+  if(cur_user.privilege <= user.privilege && cur_username != username) return {"-1", Signal::sig_normal};
   return {user.str(), Signal::sig_normal};
 }
 
@@ -374,8 +374,10 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::modify_profile(const argli
   User cur_user = db_set->user_db.list(db_set->user_index_db.list(cur_username)[0])[0];
   auto user_index = index_list[0];
   User user = db_set->user_db.list(user_index)[0];
-  if(cur_user.privilege < user.privilege) return {"-1", Signal::sig_normal};
-  if(cur_user.privilege < user.privilege || cur_user.privilege <= privilege) return {"-1", Signal::sig_normal};
+  // if(cur_user.privilege < user.privilege) return {"-1", Signal::sig_normal};
+  // if(cur_user.privilege < user.privilege || cur_user.privilege <= privilege) return {"-1", Signal::sig_normal};
+  if(cur_user.privilege <= user.privilege && cur_username != username || cur_user.privilege <= privilege)
+    return {"-1", Signal::sig_normal};
 
   db_set->user_db.erase(user_index, user);
   if(!args.at('p').empty()) user.password = password;
@@ -492,7 +494,8 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_ticket(const arglis
     if(train_list_s[i].train_id < train_list_t[j].train_id) {++i; continue;}
     else if(train_list_s[i].train_id > train_list_t[j].train_id) {++j; continue;}
     if(train_list_s[i].order >= train_list_t[j].order) {++i; ++j; continue;}
-    const Train &train = db_set->train_db.list(db_set->train_index_db.list(train_list_t[j].train_id)[0])[0];
+    auto train_index = db_set->train_index_db.list(train_list_t[j].train_id)[0];
+    const Train train = db_set->train_db.list(train_index)[0];
     if(!train.has_released) {++i; ++j; continue;}
     const int index_s = train_list_s[i].order;
     const int index_t = train_list_t[j].order;
@@ -726,7 +729,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
-    return {ism::itos(price), Signal::sig_normal};
+    return {ism::itos(price * seat_num), Signal::sig_normal};
   } else {
     if(!accept_queue) return {"-1", Signal::sig_normal};
     auto ticket_request_index = ++db_set->info.ticket_request_tot;
