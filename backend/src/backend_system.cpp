@@ -263,6 +263,8 @@ BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
     if(command.cmd_name == func_name_list[i]) {
       arglist_t sorted_arglist = func_default_arglist[i];
       sort_arglist(command.arglist, sorted_arglist);
+      if(command.timestamp == 70703)
+        std::cerr << "Here" << std::endl;
       result = func_list[i](sorted_arglist);
       is_valid = true;
       break;
@@ -656,7 +658,9 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
         Date end_date2s = Date{tr2.sale_date_last, tr2.start_time}.add_minutes(tr2.leaving_time_diff[order2s]);
         auto day_diff2 = end_date2s.date_md - date_md_mid2;
         Date_md start_date_md2 = tr2.sale_date_last.subtract_days(day_diff2);
-        if(start_date_md2 < tr2.sale_date_first || start_date_md2 > tr2.sale_date_last) continue;
+        if(start_date_md2 > tr2.sale_date_last) continue;
+        // Wait for available train. Maybe for days or months.
+        if(start_date_md2 < tr2.sale_date_first) start_date_md2 = tr2.sale_date_first;
         Date start_date2 = {start_date_md2, tr2.start_time};
         Date date2s = start_date2.add_minutes(tr2.leaving_time_diff[order2s]);
         Date date2t = start_date2.add_minutes(tr2.arriving_time_diff[order2t]);
@@ -768,37 +772,37 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
   if(ticket_status_list.size() < number) return {"-1", Signal::sig_normal};
   auto refund_ticket_index = ticket_status_list[ticket_status_list.size() - number];
   auto refund_ticket_status = db_set->ticket_status_db.list(refund_ticket_index)[0];
-  if(refund_ticket_status.status == ticket_status_t::status_t::success) {
-    db_set->ticket_status_db.erase(refund_ticket_index, refund_ticket_status);
-    refund_ticket_status.status = ticket_status_t::status_t::refunded;
-    db_set->ticket_status_db.insert(refund_ticket_index, refund_ticket_status);
-    int date_exact = refund_ticket_status.start_date_md.exact_number();
-    Train::train_id_t train_id = refund_ticket_status.train_id;
-    auto train_index = db_set->train_index_db.list(train_id)[0];
-    Train train = db_set->train_db.list(train_index)[0];
-    db_set->train_db.erase(train_index, train);
-    for(int i = refund_ticket_status.order_s; i < refund_ticket_status.order_t; ++i)
-      train.unsold_seat_nums[date_exact][i] += refund_ticket_status.amount;
-    // refund ended. Try to sell pending tickets.
-    auto pending_list = db_set->pending_list_db.list({train_id, date_exact});
-    for(int pending_index : pending_list) {
-      auto pending_status = db_set->ticket_status_db.list(pending_index)[0];
-      int max_seat_num = Train::k_max_seat_num + 1;
-      for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
-        if(max_seat_num > train.unsold_seat_nums[date_exact][i])
-          max_seat_num = train.unsold_seat_nums[date_exact][i];
-      if(max_seat_num < pending_status.amount) break;
+  if(refund_ticket_status.status == ticket_status_t::status_t::refunded)
+    return {"-1", Signal::sig_normal};
+  db_set->ticket_status_db.erase(refund_ticket_index, refund_ticket_status);
+  refund_ticket_status.status = ticket_status_t::status_t::refunded;
+  db_set->ticket_status_db.insert(refund_ticket_index, refund_ticket_status);
+  int date_exact = refund_ticket_status.start_date_md.exact_number();
+  Train::train_id_t train_id = refund_ticket_status.train_id;
+  auto train_index = db_set->train_index_db.list(train_id)[0];
+  Train train = db_set->train_db.list(train_index)[0];
+  db_set->train_db.erase(train_index, train);
+  for(int i = refund_ticket_status.order_s; i < refund_ticket_status.order_t; ++i)
+    train.unsold_seat_nums[date_exact][i] += refund_ticket_status.amount;
+  // refund ended. Try to sell pending tickets.
+  auto pending_list = db_set->pending_list_db.list({train_id, date_exact});
+  for(int pending_index : pending_list) {
+    auto pending_status = db_set->ticket_status_db.list(pending_index)[0];
+    int max_seat_num = Train::k_max_seat_num + 1;
+    for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
+      if(max_seat_num > train.unsold_seat_nums[date_exact][i])
+        max_seat_num = train.unsold_seat_nums[date_exact][i];
+    if(max_seat_num < pending_status.amount) break;
 
-      db_set->pending_list_db.erase({train_id, date_exact}, pending_index);
-      db_set->ticket_status_db.erase(pending_index, pending_status);
-      for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
-        train.unsold_seat_nums[date_exact][i] -= pending_status.amount;
-      pending_status.status = ticket_status_t::status_t::success;
-      db_set->ticket_status_db.insert(pending_index, pending_status);
-    }
-    db_set->train_db.insert(train_index, train);
-    return {"0", Signal::sig_normal};
-  } else return {"-1", Signal::sig_normal};
+    db_set->pending_list_db.erase({train_id, date_exact}, pending_index);
+    db_set->ticket_status_db.erase(pending_index, pending_status);
+    for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
+      train.unsold_seat_nums[date_exact][i] -= pending_status.amount;
+    pending_status.status = ticket_status_t::status_t::success;
+    db_set->ticket_status_db.insert(pending_index, pending_status);
+  }
+  db_set->train_db.insert(train_index, train);
+  return {"0", Signal::sig_normal};
 }
 
 BackendSystem::ReturnInfo BackendSystem::clean(const arglist_t &args) {

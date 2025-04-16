@@ -94,17 +94,119 @@ void test_ticket_system_interface() {
   // interface_system.interface(".");
 }
 
-void debug() {
-  freopen("../testcases/basic_3/7.in", "r", stdin);
-  freopen("../testcases/basic_3/7.ism", "w", stdout);
-  test_ticket_system_interface();
-  std::system("diff -bB ../testcases/basic_3/7.ism ../testcases/basic_3/7.out");
-  fclose(stdin); fclose(stdout);
+std::vector<std::pair<std::string, std::vector<int>>> parseJsonToVector(const std::string& filename) {
+  std::vector<std::pair<std::string, std::vector<int>>> result;
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    return result;
+  }
+
+  std::string line;
+  std::string jsonContent;
+  while (std::getline(file, line)) {
+    jsonContent += line;
+  }
+  file.close();
+
+  // Remove whitespace
+  std::string cleanContent;
+  for (char c : jsonContent) {
+    if (!std::isspace(c)) {
+      cleanContent += c;
+    }
+  }
+
+  size_t pos = 0;
+  // Skip until the first '{'
+  pos = cleanContent.find('{', pos);
+  if (pos == std::string::npos) {
+    return result;
+  }
+  pos++;
+
+  while (pos < cleanContent.size()) {
+    // Find key
+    size_t quoteStart = cleanContent.find('"', pos);
+    if (quoteStart == std::string::npos) break;
+    size_t quoteEnd = cleanContent.find('"', quoteStart + 1);
+    if (quoteEnd == std::string::npos) break;
+
+    std::string key = cleanContent.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+    pos = quoteEnd + 1;
+
+    // Find ':'
+    pos = cleanContent.find(':', pos);
+    if (pos == std::string::npos) break;
+    pos++;
+
+    // Find '['
+    pos = cleanContent.find('[', pos);
+    if (pos == std::string::npos) break;
+    pos++;
+
+    // Find numbers
+    std::vector<int> numbers;
+    while (pos < cleanContent.size()) {
+      // Skip non-digit characters
+      while (pos < cleanContent.size() && !std::isdigit(cleanContent[pos])) {
+        if (cleanContent[pos] == ']') break;
+        pos++;
+      }
+      if (pos >= cleanContent.size() || cleanContent[pos] == ']') break;
+
+      // Extract number
+      size_t numStart = pos;
+      while (pos < cleanContent.size() && std::isdigit(cleanContent[pos])) {
+        pos++;
+      }
+      std::string numStr = cleanContent.substr(numStart, pos - numStart);
+      numbers.push_back(std::stoi(numStr));
+
+      // Skip comma
+      if (cleanContent[pos] == ',') pos++;
+    }
+
+    // Add to result
+    result.emplace_back(key, numbers);
+
+    // Find next entry or end
+    pos = cleanContent.find(']', pos);
+    if (pos == std::string::npos) break;
+    pos++;
+    if (cleanContent[pos] == ',') pos++;
+    if (cleanContent[pos] == '}') break;
+  }
+
+  return result;
+}
+
+void global_test() {
+  auto json = parseJsonToVector("../testcases/config.json");
+  std::string path = "../testcases";
+  auto original_cin = std::cin.rdbuf();
+  auto original_cout = std::cout.rdbuf();
+  for(auto &[subdir, tests]: json) {
+    std::system("cd ../data && ./clear.bash");
+    for(auto test: tests) {
+      std::string prefix = path + '/' + subdir + '/' + std::to_string(test);
+      std::ifstream fin(prefix + ".in");
+      std::cin.rdbuf(fin.rdbuf());
+      std::ofstream fout(prefix + ".ism");
+      std::cout.rdbuf(fout.rdbuf());
+      test_ticket_system_interface();
+      std::cout.flush();
+      std::cin.rdbuf(original_cin);
+      fin.close();
+      std::cout.rdbuf(original_cout);
+      fout.close();
+      std::system(std::string("diff -bB " + prefix + ".ism " + prefix + ".out").c_str());
+    }
+  }
 }
 
 int main() {
   // test_database();
-  test_ticket_system_interface();
-  // debug();
+  // test_ticket_system_interface();
+  global_test();
   return 0;
 }

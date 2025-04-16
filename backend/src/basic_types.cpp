@@ -129,9 +129,9 @@ Date_md::date_dur_t Date_md::operator-(const Date_md &other) const {
 }
 
 Date_md::date_dur_t Date_md::exact_number() const {
-  if(month == 6) return day;
-  if(month == 7) return k_month_days[6] + day;
-  if(month == 8) return k_month_days[6] + k_month_days[7] + day;
+  if(month == 6) return day - 1;
+  if(month == 7) return k_month_days[6] + day - 1;
+  if(month == 8) return k_month_days[6] + k_month_days[7] + day - 1;
   throw TicketSystemException("Date out of capable range.");
 }
 
