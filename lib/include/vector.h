@@ -7,6 +7,9 @@
 
 namespace insomnia {
 template <class Tp>
+using vector = std::vector<Tp>;
+/*
+template <class Tp>
 class vector {
 public:
   class const_iterator;
@@ -130,7 +133,7 @@ private:
   size_t _left, _right;
   size_t _capacity;
 };
-
+*/
 }
 
 #include "vector.tcc"

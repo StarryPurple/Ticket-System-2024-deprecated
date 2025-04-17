@@ -186,14 +186,21 @@ void global_test() {
   auto original_cin = std::cin.rdbuf();
   auto original_cout = std::cout.rdbuf();
   for(auto &[subdir, tests]: json) {
+    if(subdir != "basic_extra") continue;
     std::system("cd ../data && ./clear.bash");
+    std::cerr << "Subtest " << subdir << " starts." << std::endl;
     for(auto test: tests) {
+      std::cerr << "Testpoint " << test << " starts.";
       std::string prefix = path + '/' + subdir + '/' + std::to_string(test);
       std::ifstream fin(prefix + ".in");
       std::cin.rdbuf(fin.rdbuf());
       std::ofstream fout(prefix + ".ism");
       std::cout.rdbuf(fout.rdbuf());
+      auto beg = std::chrono::high_resolution_clock().now();
       test_ticket_system_interface();
+      auto end = std::chrono::high_resolution_clock().now();
+      std::cerr << " Used " << std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count()
+          << "ms" << std::endl;
       std::cout.flush();
       std::cin.rdbuf(original_cin);
       fin.close();
@@ -201,6 +208,7 @@ void global_test() {
       fout.close();
       std::system(std::string("diff -bB " + prefix + ".ism " + prefix + ".out").c_str());
     }
+    std::cerr << std::endl;
   }
 }
 

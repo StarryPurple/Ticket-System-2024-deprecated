@@ -128,7 +128,7 @@ Date_md::date_dur_t Date_md::operator-(const Date_md &other) const {
   return (k_month_days_accum[month - 1] + day) - (k_month_days_accum[other.month - 1] + other.day);
 }
 
-Date_md::date_dur_t Date_md::exact_number() const {
+Date_md::date_dur_t Date_md::days_since_epoch() const {
   if(month == 6) return day - 1;
   if(month == 7) return k_month_days[6] + day - 1;
   if(month == 8) return k_month_days[6] + k_month_days[7] + day - 1;
@@ -268,7 +268,7 @@ Train::Train(
       sale_date_first(_sale_date_first), sale_date_last(_sale_date_last), train_type(_train_type),
       has_released(false) {
   for(int i = 0; i < _station_num; ++i) station_names[i] = _station_names[i];
-  for(int i = 0; i < k_max_days; ++i)
+  for(int i = sale_date_first.days_since_epoch(); i <= sale_date_last.days_since_epoch(); ++i)
     for(int j = 0; j < _station_num - 1; ++j)
       unsold_seat_nums[i][j] = passenger_capacity;
   accumulated_prices[0] = 0;
@@ -300,7 +300,7 @@ std::string Train::station_profile(const Date_md &start_date, int route_index) c
   res += ism::itos(accumulated_prices[route_index]);
   res += ' ';
   if(route_index == station_num - 1) res += 'x';
-  else res += ism::itos(unsold_seat_nums[start_date.exact_number()][route_index]);
+  else res += ism::itos(unsold_seat_nums[start_date.days_since_epoch()][route_index]);
   return res;
 }
 

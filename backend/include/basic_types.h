@@ -55,7 +55,7 @@ struct Date_md {
   bool operator<=(const Date_md &) const;
   bool operator>=(const Date_md &) const;
   std::string str() const;
-  date_dur_t exact_number() const;
+  date_dur_t days_since_epoch() const;
 };
 
 struct Date {

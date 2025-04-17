@@ -5,6 +5,7 @@
 
 namespace insomnia {
 
+/*
 // vector::iterator
 
 template <class Tp>
@@ -492,7 +493,7 @@ void vector<Tp>::reserve(const size_t &capacity) {
   _data = new_data;
   _capacity = capacity;
 }
-
+*/
 }
 
 #endif // INSOMNIA_VECTOR_TCC

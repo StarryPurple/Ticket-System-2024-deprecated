@@ -263,8 +263,6 @@ BackendSystem::Signal BackendSystem::run_command(const Command &command) const {
     if(command.cmd_name == func_name_list[i]) {
       arglist_t sorted_arglist = func_default_arglist[i];
       sort_arglist(command.arglist, sorted_arglist);
-      if(command.timestamp == 70703)
-        std::cerr << "Here" << std::endl;
       result = func_list[i](sorted_arglist);
       is_valid = true;
       break;
@@ -506,7 +504,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_ticket(const arglis
     Date_md date_md_s = train.sale_date_last.subtract_days(days_diff);
     if(date_md_s < train.sale_date_first || date_md_s > train.sale_date_last) {++i; ++j; continue;}
     Date date_s = {date_md_s, train.start_time};
-    int date_s_exact = date_md_s.exact_number();
+    int date_s_exact = date_md_s.days_since_epoch();
     Temp temp;
     temp.info = train.train_id.str() + ' ' + start_station.str() + ' ' +
                 date_s.add_minutes(train.leaving_time_diff[index_s]).str() + " -> " +
@@ -585,7 +583,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
       if(lhs.cost != rhs.cost) return lhs.cost < rhs.cost;
       if(lhs.train1 != rhs.train1) return lhs.train1 < rhs.train1;
       return lhs.train2 < rhs.train2;
-    } else if(sort_type == "price") {
+    } else if(sort_type == "cost") {
       if(lhs.cost != rhs.cost) return lhs.cost < rhs.cost;
       if(lhs.time != rhs.time) return lhs.time < rhs.time;
       if(lhs.train1 != rhs.train1) return lhs.train1 < rhs.train1;
@@ -654,8 +652,8 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
         Date date1s = start_date1.add_minutes(tr1.leaving_time_diff[order1s]);
         Date date1t = start_date1.add_minutes(tr1.arriving_time_diff[order1t]);
         Date_md date_md_mid2 = date1t.date_md;
-        if(date1t.time_hm > tr2.start_time) date_md_mid2 = date_md_mid2.add_days(1);
         Date end_date2s = Date{tr2.sale_date_last, tr2.start_time}.add_minutes(tr2.leaving_time_diff[order2s]);
+        if(date1t.time_hm > end_date2s.time_hm) date_md_mid2 = date_md_mid2.add_days(1);
         auto day_diff2 = end_date2s.date_md - date_md_mid2;
         Date_md start_date_md2 = tr2.sale_date_last.subtract_days(day_diff2);
         if(start_date_md2 > tr2.sale_date_last) continue;
@@ -671,7 +669,7 @@ BackendSystem::ReturnInfo BackendSystem::TrainManager::query_transfer(const argl
           (tr2.accumulated_prices[order2t] - tr2.accumulated_prices[order2s]);
         Info current{tr1, tr2, order1s, order1t, order2s, order2t,
                      date1s, date1t, date2s, date2t,
-                     start_date_md1.exact_number(), start_date_md2.exact_number(), time, price};
+                     start_date_md1.days_since_epoch(), start_date_md2.days_since_epoch(), time, price};
         if(less_comp(current, info)) info = current;
       }
     }
@@ -706,25 +704,25 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     if(train.station_names[i] == start_station) order_s = i;
     if(train.station_names[i] == terminal_station) order_t = i;
   }
-  if(order_s == -1 || order_t == -1) return {"-1", Signal::sig_normal};
+  if(order_s == -1 || order_t == -1 || order_s > order_t) return {"-1", Signal::sig_normal};
   auto start_date_md = train.sale_date_last.subtract_days(
     Date{train.sale_date_last, train.start_time}.add_minutes(train.leaving_time_diff[order_s]).date_md
     - date_md_mid);
   if(start_date_md < train.sale_date_first || start_date_md > train.sale_date_last)
     return {"-1", Signal::sig_normal};
-  int day_exact = start_date_md.exact_number();
+  int days_since_epoch = start_date_md.days_since_epoch();
   Date date_s = Date{start_date_md, train.start_time}.add_minutes(train.leaving_time_diff[order_s]);
   Date date_t = Date{start_date_md, train.start_time}.add_minutes(train.arriving_time_diff[order_t]);
   Train::seat_num_t seat_num_left = Train::k_max_seat_num - 1;
   for(int i = order_s; i < order_t; ++i)
-    if(seat_num_left > train.unsold_seat_nums[day_exact][i])
-      seat_num_left = train.unsold_seat_nums[day_exact][i];
+    if(seat_num_left > train.unsold_seat_nums[days_since_epoch][i])
+      seat_num_left = train.unsold_seat_nums[days_since_epoch][i];
   Train::price_t price =
     train.accumulated_prices[order_t] - train.accumulated_prices[order_s];
   if(seat_num_left >= seat_num) {
     db_set->train_db.erase(train_index, train);
     for(int i = order_s; i < order_t; ++i)
-      train.unsold_seat_nums[day_exact][i] -= seat_num;
+      train.unsold_seat_nums[days_since_epoch][i] -= seat_num;
     db_set->train_db.insert(train_index, train);
     auto ticket_request_index = ++db_set->info.ticket_request_tot;
     ticket_status_t ticket_status{ticket_status_t::status_t::success,
@@ -733,6 +731,8 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
+    if(price * seat_num < 0)
+      assert(false);
     return {ism::itos(price * seat_num), Signal::sig_normal};
   } else {
     if(!accept_queue) return {"-1", Signal::sig_normal};
@@ -743,7 +743,7 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::buy_ticket(const arglist_t
     auto user_index = db_set->user_index_db.list(username)[0];
     db_set->user_ticket_status_index_db.insert(user_index, ticket_request_index);
     db_set->ticket_status_db.insert(ticket_request_index, ticket_status);
-    db_set->pending_list_db.insert({train_id, start_date_md.exact_number()}, ticket_request_index);
+    db_set->pending_list_db.insert({train_id, start_date_md.days_since_epoch()}, ticket_request_index);
     return {"queue", Signal::sig_normal};
   }
 }
@@ -774,30 +774,33 @@ BackendSystem::ReturnInfo BackendSystem::UserManager::refund_ticket(const arglis
   auto refund_ticket_status = db_set->ticket_status_db.list(refund_ticket_index)[0];
   if(refund_ticket_status.status == ticket_status_t::status_t::refunded)
     return {"-1", Signal::sig_normal};
+  bool no_need_to_recollect = (refund_ticket_status.status == ticket_status_t::status_t::pending);
   db_set->ticket_status_db.erase(refund_ticket_index, refund_ticket_status);
   refund_ticket_status.status = ticket_status_t::status_t::refunded;
   db_set->ticket_status_db.insert(refund_ticket_index, refund_ticket_status);
-  int date_exact = refund_ticket_status.start_date_md.exact_number();
+  if(no_need_to_recollect)
+    return {"0", Signal::sig_normal};
+  int days_since_epoch = refund_ticket_status.start_date_md.days_since_epoch();
   Train::train_id_t train_id = refund_ticket_status.train_id;
   auto train_index = db_set->train_index_db.list(train_id)[0];
   Train train = db_set->train_db.list(train_index)[0];
   db_set->train_db.erase(train_index, train);
   for(int i = refund_ticket_status.order_s; i < refund_ticket_status.order_t; ++i)
-    train.unsold_seat_nums[date_exact][i] += refund_ticket_status.amount;
+    train.unsold_seat_nums[days_since_epoch][i] += refund_ticket_status.amount;
   // refund ended. Try to sell pending tickets.
-  auto pending_list = db_set->pending_list_db.list({train_id, date_exact});
+  auto pending_list = db_set->pending_list_db.list({train_id, days_since_epoch});
   for(int pending_index : pending_list) {
     auto pending_status = db_set->ticket_status_db.list(pending_index)[0];
-    int max_seat_num = Train::k_max_seat_num + 1;
+    int max_seat_num = Train::k_max_seat_num;
     for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
-      if(max_seat_num > train.unsold_seat_nums[date_exact][i])
-        max_seat_num = train.unsold_seat_nums[date_exact][i];
-    if(max_seat_num < pending_status.amount) break;
+      if(max_seat_num > train.unsold_seat_nums[days_since_epoch][i])
+        max_seat_num = train.unsold_seat_nums[days_since_epoch][i];
+    if(max_seat_num < pending_status.amount) continue; // Later but less demanding queries should be also detected.
 
-    db_set->pending_list_db.erase({train_id, date_exact}, pending_index);
+    db_set->pending_list_db.erase({train_id, days_since_epoch}, pending_index);
     db_set->ticket_status_db.erase(pending_index, pending_status);
     for(int i = pending_status.order_s; i < pending_status.order_t; ++i)
-      train.unsold_seat_nums[date_exact][i] -= pending_status.amount;
+      train.unsold_seat_nums[days_since_epoch][i] -= pending_status.amount;
     pending_status.status = ticket_status_t::status_t::success;
     db_set->ticket_status_db.insert(pending_index, pending_status);
   }
